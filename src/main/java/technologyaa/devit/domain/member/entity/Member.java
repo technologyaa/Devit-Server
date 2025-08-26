@@ -23,5 +23,6 @@ public class Member {
     private String phone;
     private int age;
 
+    @Enumerated(EnumType.STRING)
     private Role role;
 }

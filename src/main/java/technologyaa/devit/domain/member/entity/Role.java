@@ -1,8 +1,8 @@
 package technologyaa.devit.domain.member.entity;
 
 public enum Role {
-    BASIC,
-    ADMIN,
-    VIP,
-    business
+    ROLE_BASIC,
+    ROLE_ADMIN,
+    ROLE_VIP,
+    ROLE_business
 }

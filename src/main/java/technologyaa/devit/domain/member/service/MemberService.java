@@ -32,7 +32,7 @@ public class MemberService {
                     .email(request.email())
                     .phone(request.phone())
                     .age(request.age())
-                    .role(Role.BASIC)
+                    .role(Role.ROLE_BASIC)
                     .build();
             memberRepository.save(member);
             return ResponseEntity.ok(Map.of("Message", "회원가입에 성공하셨습니다."));
