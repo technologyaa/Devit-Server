@@ -45,12 +45,19 @@ public class JwtProvider {
         return claims.getSubject();
     }
 
+    public Role getRole(String token) {
+        Claims claims = Jwts.parser()
+                .verifyWith(secretKey)
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
+        String roleString = claims.get("role", String.class);
+        return Role.valueOf(roleString);
+    }
+
     public boolean validateToken(String token) {
-        if (token == null || token.isBlank()) {
-            return false;
-        }
         try {
-            Claims claims = Jwts.parser()
+            Jwts.parser()
                     .verifyWith(secretKey)
                     .build()
                     .parseSignedClaims(token)

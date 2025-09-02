@@ -31,7 +31,6 @@ public class MemberService {
                     .password(passwordEncoder.encode(request.password()))
                     .email(request.email())
                     .phone(request.phone())
-                    .age(request.age())
                     .role(Role.ROLE_BASIC)
                     .build();
             memberRepository.save(member);

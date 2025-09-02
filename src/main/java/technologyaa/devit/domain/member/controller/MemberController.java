@@ -21,7 +21,7 @@ public class MemberController {
         return memberService.signUp(signUpRequest);
     }
 
-    @PostMapping("/login")
+    @PostMapping("/signin")
     public ResponseEntity<?> signIn(@RequestBody SignInRequest signInRequest) {
         return memberService.signIn(signInRequest);
     }
