@@ -1,0 +1,54 @@
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '3.2.5' // Spring Boot 3.2.5 버전 사용
+    id 'io.spring.dependency-management' version '1.1.4'
+}
+
+group = 'com.example'
+version = '0.0.1-SNAPSHOT'
+
+java {
+    sourceCompatibility = '17'
+}
+
+configurations {
+    compileOnly {
+        extendsFrom annotationProcessor
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    // Spring Boot Web Starter
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+
+    // (기존) 웹소켓 스타터
+    implementation 'org.springframework.boot:spring-boot-starter-websocket'
+
+    // (추가) 명시적으로 Spring WebSocket 코어 라이브러리 추가
+    // Spring Boot Starter가 처리해야 하지만, 명시적으로 추가하여 문제를 우회합니다.
+    implementation 'org.springframework:spring-websocket'
+
+    // JPA and MySQL for persistence
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    runtimeOnly 'com.mysql:mysql-connector-j'
+
+    // Lombok for boilerplate code reduction
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+
+    // Used by ChatHandler for JSON parsing
+    implementation 'com.fasterxml.jackson.core:jackson-databind'
+
+    // Test dependencies
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework.boot:spring-boot-testcontainers'
+    testImplementation 'org.testcontainers:junit-jupiter'
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}

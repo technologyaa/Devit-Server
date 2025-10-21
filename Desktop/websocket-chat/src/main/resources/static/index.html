@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>웹소켓 채팅 클라이언트</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
+        .chat-container { max-width: 600px; margin: 40px auto; background: white; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); }
+        .message-box { padding: 8px 12px; border-radius: 10px; margin-bottom: 8px; max-width: 75%; }
+        .my-message { background-color: #DCF8C6; margin-left: auto; text-align: right; }
+        .other-message { background-color: #E5E7EB; margin-right: auto; text-align: left; }
+    </style>
+</head>
+<body class="p-4">
+
+<div class="chat-container rounded-xl p-6">
+    <h1 class="text-3xl font-bold mb-6 text-gray-800">실시간 웹소켓 채팅</h1>
+
+    <div id="chat-window" class="h-96 overflow-y-auto border border-gray-200 p-4 mb-4 rounded-lg bg-gray-50 flex flex-col">
+        <!-- 메시지들이 여기에 표시됩니다 -->
+        <p class="text-gray-500 text-center mb-4">채팅 서버에 연결 중...</p>
+    </div>
+
+    <div class="flex space-x-3">
+        <!-- 사용자의 닉네임을 임의로 설정 (실제 앱에서는 로그인 정보 사용) -->
+        <input type="text" id="sender-input" value="익명사용자" class="p-2 border border-gray-300 rounded-lg w-1/4 text-sm focus:ring-blue-500 focus:border-blue-500" placeholder="닉네임">
+        <input type="text" id="message-input" class="p-2 border border-gray-300 rounded-lg flex-grow focus:ring-blue-500 focus:border-blue-500" placeholder="메시지 입력..." onkeyup="if(event.key === 'Enter') sendMessage()">
+        <button id="send-button" onclick="sendMessage()" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition duration-150">전송</button>
+    </div>
+
+    <div id="status" class="mt-4 text-sm text-center font-medium">
+        <span class="text-red-500">연결 끊김</span>
+    </div>
+</div>
+
+<script>
+    // 현재 접속한 사용자의 임의 ID를 생성 (세션 구분을 위함)
+    const MY_SENDER_ID = 'user-' + Math.random().toString(36).substring(2, 9);
+
+    // 💡 수정된 부분: ngrok을 통해 배포된 서버 주소를 명시적으로 사용합니다.
+    // 클라이언트 파일이 실행되는 도메인과 서버 도메인이 다르기 때문에 주소를 고정해야 합니다.
+    const SERVER_HOST = "kourtney-rewirable-fumiko.ngrok-free.dev";
+    const protocol = 'wss'; // ngrok은 HTTPS를 사용하므로 웹소켓은 WSS를 사용해야 합니다.
+    const endpoint = "/ws/chat"; // Spring Boot 웹소켓 엔드포인트 경로
+
+    const websocket = new WebSocket(`${protocol}://${SERVER_HOST}${endpoint}`);
+
+    const chatWindow = document.getElementById('chat-window');
+    const messageInput = document.getElementById('message-input');
+    const senderInput = document.getElementById('sender-input');
+    const statusDiv = document.getElementById('status');
+
+    // 1. 연결 성공 시
+    websocket.onopen = function() {
+        console.log("웹소켓 서버에 연결되었습니다. 주소:", `${protocol}://${SERVER_HOST}${endpoint}`);
+        statusDiv.innerHTML = `<span class="text-green-600">연결 성공</span>`;
+        // 처음 연결 시 입장 메시지를 보냅니다 (ENTER 타입)
+        sendControlMessage(senderInput.value, 'ENTER');
+    };
+
+    // 2. 메시지 수신 시
+    websocket.onmessage = function(event) {
+        const payload = event.data;
+        console.log("메시지 수신:", payload);
+
+        try {
+            // 서버에서 보낸 JSON 문자열을 객체로 변환
+            const message = JSON.parse(payload);
+
+            // 오류 메시지 처리
+            if (message.error) {
+                displayMessage('System', `오류: ${message.error}`, 'system');
+                return;
+            }
+
+            // ChatMessage DTO 형태의 메시지를 화면에 표시
+            displayMessage(message.sender, message.content, message.type, message.timestamp);
+
+        } catch (e) {
+            console.error("수신 메시지 파싱 오류:", e);
+            displayMessage('System', '수신된 데이터 형식이 올바르지 않습니다.', 'system');
+        }
+    };
+
+    // 3. 연결 닫힘 시
+    websocket.onclose = function() {
+        console.log("웹소켓 연결이 종료되었습니다.");
+        statusDiv.innerHTML = `<span class="text-red-500">연결 끊김</span>`;
+    };
+
+    // 4. 오류 발생 시
+    websocket.onerror = function(error) {
+        console.error("웹소켓 오류 발생:", error);
+        statusDiv.innerHTML = `<span class="text-red-500">오류 발생</span>`;
+    };
+
+    // 메시지 전송 함수 (TALK 타입)
+    function sendMessage() {
+        if (websocket.readyState === WebSocket.OPEN) {
+            const sender = senderInput.value || '익명';
+            const content = messageInput.value.trim();
+
+            if (content === "") return;
+
+            // 서버의 ChatMessage DTO에 맞게 객체 생성
+            const chatMessage = {
+                sender: sender,
+                content: content,
+                type: "TALK" // 일반 채팅 메시지 타입
+                // ID와 timestamp는 서버에서 처리됩니다.
+            };
+
+            // 객체를 JSON 문자열로 변환(직렬화)하여 전송합니다.
+            websocket.send(JSON.stringify(chatMessage));
+
+            // 입력창 초기화
+            messageInput.value = '';
+            messageInput.focus();
+        } else {
+            alertMessage('웹소켓 연결이 끊어졌습니다.');
+        }
+    }
+
+    // 제어 메시지 전송 함수 (ENTER, LEAVE 등)
+    function sendControlMessage(senderName, type) {
+        if (websocket.readyState === WebSocket.OPEN) {
+            const message = {
+                sender: senderName,
+                content: type === 'ENTER' ? `${senderName} 님이 입장했습니다.` : `${senderName} 님이 나갔습니다.`,
+                type: type
+            };
+            websocket.send(JSON.stringify(message));
+        }
+    }
+
+    // 시간 형식을 '오후 7:58' 형태로 변환하는 유틸리티 함수
+    function formatTime(timestamp) {
+        if (!timestamp) return '';
+
+        let date;
+        try {
+            // Spring Boot에서 LocalDateTime이 'YYYY-MM-DDTHH:MM:SS.SSS' 형태의 문자열로 전송됨
+            if (typeof timestamp === 'string') {
+                date = new Date(timestamp);
+            } else {
+                date = new Date(timestamp);
+            }
+        } catch (e) {
+            return '';
+        }
+
+        if (isNaN(date.getTime())) {
+            return '';
+        }
+
+        const hours = date.getHours();
+        const minutes = date.getMinutes().toString().padStart(2, '0');
+        const ampm = hours >= 12 ? '오후' : '오전';
+        const displayHours = hours % 12 || 12; // 0시를 12시로 표시
+
+        return `${ampm} ${displayHours}:${minutes}`;
+    }
+
+    // 메시지 화면 출력 함수
+    function displayMessage(sender, content, type, timestamp) {
+        const messageElement = document.createElement('div');
+        const senderId = senderInput.value; // 현재 사용자의 닉네임
+
+        // 메시지 타입에 따른 스타일 및 내용 결정
+        if (type === 'ENTER' || type === 'LEAVE') {
+            messageElement.className = 'text-center text-gray-500 italic text-sm mt-2';
+            messageElement.textContent = content;
+        } else {
+            // 일반 대화 메시지
+            const isMyMessage = sender === senderId; // 닉네임으로 판단
+
+            messageElement.className = `message-box ${isMyMessage ? 'my-message' : 'other-message'}`;
+            messageElement.innerHTML = `
+                <div class="font-bold text-xs ${isMyMessage ? 'text-green-800' : 'text-blue-800'}">${sender}</div>
+                <div class="mt-1 break-words">${content}</div>
+                <div class="text-xs text-gray-500 mt-1">${formatTime(timestamp)}</div>
+            `;
+        }
+
+        chatWindow.appendChild(messageElement);
+        // 항상 스크롤을 맨 아래로
+        chatWindow.scrollTop = chatWindow.scrollHeight;
+    }
+
+    // 간단한 커스텀 알림 메시지 함수
+    function alertMessage(message) {
+        // 기존 alert() 대신 사용할 간단한 표시
+        const tempAlert = document.createElement('div');
+        tempAlert.className = 'fixed top-4 right-4 bg-yellow-400 text-gray-800 p-3 rounded-lg shadow-lg z-50 transition-opacity duration-300';
+        tempAlert.textContent = message;
+        document.body.appendChild(tempAlert);
+        setTimeout(() => tempAlert.remove(), 3000);
+    }
+
+    // 창을 닫을 때 나가는 메시지 전송
+    window.addEventListener('beforeunload', () => {
+        sendControlMessage(senderInput.value, 'LEAVE');
+        websocket.close();
+    });
+</script>
+
+</body>
+</html>
