@@ -37,7 +37,7 @@ public class ChatHandler extends TextWebSocketHandler {
     @Override
     public void afterConnectionEstablished(WebSocketSession session) throws Exception {
         sessions.add(session);
-        log.info("✅ 새 세션 연결됨: {}. 현재 세션 수: {}", session.getId(), sessions.size());
+        log.info("새 세션 연결됨: {}. 현재 세션 수: {}", session.getId(), sessions.size());
 
         // 연결 시 기존 메시지를 불러와 전송 (옵션)
         loadAndSendPreviousMessages(session);
@@ -74,7 +74,7 @@ public class ChatHandler extends TextWebSocketHandler {
     @Override
     public void afterConnectionClosed(WebSocketSession session, CloseStatus status) throws Exception {
         sessions.remove(session);
-        log.info("❌ 세션 연결 종료됨: {}. 현재 세션 수: {}", session.getId(), sessions.size());
+        log.info("세션 연결 종료됨: {}. 현재 세션 수: {}", session.getId(), sessions.size());
     }
 
     /**
@@ -102,14 +102,14 @@ public class ChatHandler extends TextWebSocketHandler {
      */
     private void loadAndSendPreviousMessages(WebSocketSession session) {
         try {
-            log.info("📚 채팅 히스토리 로딩 시작...");
+            log.info("채팅 히스토리 로딩 시작...");
             
             // 모든 메시지를 불러와서 오래된 순서대로 정렬 (맨 아래에 최신 메시지가 보이도록)
             List<ChatMessage> messages = chatMessageRepository.findAll().stream()
                     .sorted((m1, m2) -> m1.getTimestamp().compareTo(m2.getTimestamp())) // 오래된 순서
                     .collect(Collectors.toList());
             
-            log.info("📚 히스토리 메시지 개수: {}", messages.size());
+            log.info("히스토리 메시지 개수: {}", messages.size());
             
             for (ChatMessage message : messages) {
                 try {
@@ -120,7 +120,7 @@ public class ChatHandler extends TextWebSocketHandler {
                 }
             }
             
-            log.info("📚 채팅 히스토리 로딩 완료!");
+            log.info("채팅 히스토리 로딩 완료!");
         } catch (Exception e) {
             log.error("이전 메시지 로드 중 오류 발생: {}", e.getMessage());
         }
