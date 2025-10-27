@@ -90,7 +90,12 @@ public class ChatHandler extends TextWebSocketHandler {
         });
     }
 
-    // 5. 이전 메시지를 불러와 특정 세션에 전송합니다.
+    /**
+     * 이전 메시지를 불러와 특정 세션에 전송합니다.
+     * 모든 메시지를 오래된 순서대로 정렬하여 클라이언트에 전송합니다.
+     * 
+     * @param session 메시지를 전송할 WebSocket 세션
+     */
     private void loadAndSendPreviousMessages(WebSocketSession session) {
         try {
             log.info("📚 채팅 히스토리 로딩 시작...");
