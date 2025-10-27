@@ -14,7 +14,9 @@ import org.springframework.web.socket.handler.TextWebSocketHandler;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Component
@@ -91,18 +93,25 @@ public class ChatHandler extends TextWebSocketHandler {
     // 5. 이전 메시지를 불러와 특정 세션에 전송합니다.
     private void loadAndSendPreviousMessages(WebSocketSession session) {
         try {
-            // 최근 100개의 메시지만 불러온다고 가정 (실제로는 페이징 처리가 필요)
-            chatMessageRepository.findAll().stream()
-                    .limit(100)
-                    .sorted((m1, m2) -> m1.getTimestamp().compareTo(m2.getTimestamp()))
-                    .forEach(message -> {
-                        try {
-                            String historyPayload = objectMapper.writeValueAsString(message);
-                            session.sendMessage(new TextMessage(historyPayload));
-                        } catch (IOException e) {
-                            log.error("이전 메시지 전송 오류: {}", e.getMessage());
-                        }
-                    });
+            log.info("📚 채팅 히스토리 로딩 시작...");
+            
+            // 모든 메시지를 불러와서 오래된 순서대로 정렬 (맨 아래에 최신 메시지가 보이도록)
+            List<ChatMessage> messages = chatMessageRepository.findAll().stream()
+                    .sorted((m1, m2) -> m1.getTimestamp().compareTo(m2.getTimestamp())) // 오래된 순서
+                    .collect(Collectors.toList());
+            
+            log.info("📚 히스토리 메시지 개수: {}", messages.size());
+            
+            for (ChatMessage message : messages) {
+                try {
+                    String historyPayload = objectMapper.writeValueAsString(message);
+                    session.sendMessage(new TextMessage(historyPayload));
+                } catch (Exception e) {
+                    log.error("이전 메시지 전송 오류 (ID: {}): {}", message.getId(), e.getMessage(), e);
+                }
+            }
+            
+            log.info("📚 채팅 히스토리 로딩 완료!");
         } catch (Exception e) {
             log.error("이전 메시지 로드 중 오류 발생: {}", e.getMessage());
         }
