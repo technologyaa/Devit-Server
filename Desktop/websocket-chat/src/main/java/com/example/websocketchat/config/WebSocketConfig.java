@@ -6,7 +6,11 @@ import org.springframework.web.socket.config.annotation.EnableWebSocket;
 import org.springframework.web.socket.config.annotation.WebSocketConfigurer;
 import org.springframework.web.socket.config.annotation.WebSocketHandlerRegistry;
 
-// WebSocket 활성화 및 설정을 위한 클래스
+/**
+ * WebSocket 활성화 및 설정을 위한 클래스
+ * 
+ * @see ChatHandler
+ */
 @Configuration
 @EnableWebSocket // Spring WebSocket 활성화
 public class WebSocketConfig implements WebSocketConfigurer {
