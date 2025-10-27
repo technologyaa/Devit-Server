@@ -15,6 +15,8 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.filter.CorsFilter;
 import com.example.websocketchat.domain.member.oauth.service.CustomOAuth2UserService;
+import com.example.websocketchat.domain.member.oauth.handler.OAuth2SuccessHandler;
+import com.example.websocketchat.domain.member.oauth.handler.OAuth2FailureHandler;
 import com.example.websocketchat.global.jwt.JwtAuthenticationFilter;
 
 @Configuration
@@ -24,6 +26,8 @@ public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final CustomOAuth2UserService customOAuth2UserService;
+    private final OAuth2SuccessHandler oAuth2SuccessHandler;
+    private final OAuth2FailureHandler oAuth2FailureHandler;
 
     @Bean
     public BCryptPasswordEncoder bCryptPasswordEncoder() {
@@ -45,8 +49,8 @@ public class SecurityConfig {
                         .userInfoEndpoint(userInfo -> userInfo
                                 .userService(customOAuth2UserService)
                         )
-                        .defaultSuccessUrl("/", true)
-                        .failureUrl("/login?error=true")
+                        .successHandler(oAuth2SuccessHandler)
+                        .failureHandler(oAuth2FailureHandler)
                 )
                 .logout(logout -> logout
                         .logoutUrl("/logout")
