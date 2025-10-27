@@ -77,7 +77,11 @@ public class ChatHandler extends TextWebSocketHandler {
         log.info("세션 연결 종료됨: {}. 현재 세션 수: {}", session.getId(), sessions.size());
     }
 
-    // 4. 연결된 모든 세션에 메시지를 브로드캐스트합니다.
+    /**
+     * 연결된 모든 세션에 메시지를 브로드캐스트합니다.
+     * 
+     * @param message 브로드캐스트할 메시지
+     */
     private void broadcastMessage(TextMessage message) {
         sessions.forEach(session -> {
             if (session.isOpen()) {
