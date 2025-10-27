@@ -1,36 +1,38 @@
 package com.example.websocketchat.domain.member.oauth.entity;
 
 import jakarta.persistence.*;
+import lombok.AccessLevel;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "users")
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false)
     private String name;
+
+    @Column(nullable = false, unique = true)
     private String email;
+
     private String picture;
+
+    @Column(nullable = false)
     private String provider;
 
-    public User() {}
-
+    @Builder
     public User(String name, String email, String picture, String provider) {
         this.name = name;
         this.email = email;
         this.picture = picture;
         this.provider = provider;
     }
-
-    public Long getId() { return id; }
-    public String getName() { return name; }
-    public String getEmail() { return email; }
-    public String getPicture() { return picture; }
-    public String getProvider() { return provider; }
-
-    public void setName(String name) { this.name = name; }
-    public void setPicture(String picture) { this.picture = picture; }
 
     public User update(String name, String picture) {
         this.name = name;
