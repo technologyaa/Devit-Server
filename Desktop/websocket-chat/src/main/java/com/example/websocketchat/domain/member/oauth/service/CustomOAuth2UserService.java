@@ -3,6 +3,8 @@ package com.example.websocketchat.domain.member.oauth.service;
 import com.example.websocketchat.domain.member.oauth.entity.User;
 import com.example.websocketchat.domain.member.oauth.dto.OAuthAttributes;
 import com.example.websocketchat.domain.member.oauth.repository.UserRepository;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
@@ -14,38 +16,62 @@ import org.springframework.stereotype.Service;
 
 import java.util.Collections;
 
-// @Service
+@Slf4j
+@Service
+@RequiredArgsConstructor
 public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequest, OAuth2User> {
 
     private final UserRepository userRepository;
-
-    public CustomOAuth2UserService(UserRepository userRepository) {
-        this.userRepository = userRepository;
-    }
+    private static final String DEFAULT_ROLE = "ROLE_USER";
 
     @Override
     public OAuth2User loadUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
         OAuth2User oAuth2User = new DefaultOAuth2UserService().loadUser(userRequest);
 
+        String registrationId = userRequest.getClientRegistration().getRegistrationId();
+        String userNameAttributeName = userRequest.getClientRegistration()
+                .getProviderDetails()
+                .getUserInfoEndpoint()
+                .getUserNameAttributeName();
+
         OAuthAttributes attributes = OAuthAttributes.of(
-                userRequest.getClientRegistration().getRegistrationId(),
-                userRequest.getClientRegistration().getProviderDetails().getUserInfoEndpoint().getUserNameAttributeName(),
+                registrationId,
+                userNameAttributeName,
                 oAuth2User.getAttributes()
         );
 
-        // ✅ DB에 사용자 저장 or 업데이트
-        User user = userRepository.findByEmail(attributes.getEmail())
-                .map(u -> u.update(attributes.getName(), attributes.getPicture()))
-                .orElse(attributes.toEntity());
+        log.info("OAuth 로그인 시도 - Email: {}, Provider: {}", attributes.getEmail(), attributes.getProvider());
 
-        userRepository.save(user);
+        // DB에 사용자 저장 또는 업데이트
+        User user = saveOrUpdate(attributes);
 
-        // ✅ ROLE_USER 부여
+        log.info("OAuth 사용자 저장/업데이트 완료 - ID: {}, Email: {}", user.getId(), user.getEmail());
+
+        // ROLE_USER 부여
         return new DefaultOAuth2User(
-                Collections.singleton(new SimpleGrantedAuthority("ROLE_USER")),
+                Collections.singleton(new SimpleGrantedAuthority(DEFAULT_ROLE)),
                 attributes.getAttributes(),
                 attributes.getNameAttributeKey()
         );
+    }
+
+    /**
+     * 사용자 저장 또는 업데이트
+     * @param attributes OAuth 속성
+     * @return 저장/업데이트된 User 엔티티
+     */
+    private User saveOrUpdate(OAuthAttributes attributes) {
+        return userRepository.findByEmailAndProvider(attributes.getEmail(), attributes.getProvider())
+                .map(user -> {
+                    log.debug("기존 사용자 정보 업데이트 - Email: {}", attributes.getEmail());
+                    return user.update(attributes.getName(), attributes.getPicture());
+                })
+                .map(userRepository::save)
+                .orElseGet(() -> {
+                    log.debug("신규 사용자 저장 - Email: {}", attributes.getEmail());
+                    User newUser = attributes.toEntity();
+                    return userRepository.save(newUser);
+                });
     }
 }
 
