@@ -37,7 +37,7 @@ public class ChatHandler extends TextWebSocketHandler {
     @Override
     public void afterConnectionEstablished(WebSocketSession session) throws Exception {
         sessions.add(session);
-        log.info("새 세션 연결됨: {}. 현재 세션 수: {}", session.getId(), sessions.size());
+        log.info("✅ 새 세션 연결됨: {}. 현재 세션 수: {}", session.getId(), sessions.size());
 
         // 연결 시 기존 메시지를 불러와 전송 (옵션)
         loadAndSendPreviousMessages(session);
@@ -74,7 +74,7 @@ public class ChatHandler extends TextWebSocketHandler {
     @Override
     public void afterConnectionClosed(WebSocketSession session, CloseStatus status) throws Exception {
         sessions.remove(session);
-        log.info("세션 연결 종료됨: {}. 현재 세션 수: {}", session.getId(), sessions.size());
+        log.info("❌ 세션 연결 종료됨: {}. 현재 세션 수: {}", session.getId(), sessions.size());
     }
 
     /**
