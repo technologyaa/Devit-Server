@@ -23,9 +23,15 @@ public class ProjectService {
         return projectRepository.save(project);
     }
 
-    // read
+    // read all
     public List<Project> findAll() {
         return projectRepository.findAll();
+    }
+
+    // read one
+    public Project findOne(Long projectId) {
+        return projectRepository.findById(projectId)
+                .orElseThrow(() -> new RuntimeException("해당 프로젝트를 찾을 수 없습니다."));
     }
 
     // update
