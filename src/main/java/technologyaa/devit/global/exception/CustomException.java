@@ -2,7 +2,7 @@ package technologyaa.devit.global.exception;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
-import technologyaa.devit.global.exception.auth.AuthErrorCode;
+import technologyaa.devit.domain.member.exception.AuthErrorCode;
 
 @Getter
 @AllArgsConstructor

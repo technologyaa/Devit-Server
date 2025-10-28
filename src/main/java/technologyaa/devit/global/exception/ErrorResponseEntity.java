@@ -3,7 +3,7 @@ package technologyaa.devit.global.exception;
 import lombok.Builder;
 import lombok.Data;
 import org.springframework.http.ResponseEntity;
-import technologyaa.devit.global.exception.auth.AuthErrorCode;
+import technologyaa.devit.domain.member.exception.AuthErrorCode;
 
 @Data
 @Builder

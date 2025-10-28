@@ -5,15 +5,14 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.ValueOperations;
-import org.springframework.http.ResponseEntity;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 import technologyaa.devit.global.config.RedisConfig;
+import technologyaa.devit.global.data.ApiResponse;
 import technologyaa.devit.global.exception.CustomException;
-import technologyaa.devit.global.exception.auth.AuthErrorCode;
+import technologyaa.devit.domain.member.exception.AuthErrorCode;
 
-import java.util.Map;
 import java.util.Objects;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
@@ -73,11 +72,12 @@ public class EmailService {
         return Integer.toString(authNume);
     }
 
-    public ResponseEntity<?> checkEmail(String email, String authNume) {
+    public ApiResponse<String> checkEmail(String email, String authNume) {
         ValueOperations<String, String> valueOperations = redisConfig.redisTemplate().opsForValue();
         String code = valueOperations.get(email);
         if(Objects.equals(code,authNume)){
-            return ResponseEntity.ok(Map.of("Message","인증성공"));
+            return ApiResponse.ok("이메일 인증 성공");
+
         }
         throw new CustomException(AuthErrorCode.Email_Verification_Failed);
     }

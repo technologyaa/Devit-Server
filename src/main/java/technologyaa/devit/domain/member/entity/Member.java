@@ -24,7 +24,8 @@ public class Member {
     private String email;
 
     private String createdAt;
-    private Long credit;
+    @Builder.Default
+    private Long credit = 0L;
 
     @Enumerated(EnumType.STRING)
     private Role role;

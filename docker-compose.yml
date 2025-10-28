@@ -6,7 +6,7 @@ services:
     container_name: mysql
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: 1234
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
       MYSQL_DATABASE: Devit
     ports:
       - "3306:3306"
@@ -29,15 +29,10 @@ services:
     depends_on:
       - mysql
       - redis
-    environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/Devit?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
-      SPRING_DATASOURCE_USERNAME: root
-      SPRING_DATASOURCE_PASSWORD: 1234
-      SPRING_DATA_REDIS_HOST: redis
-      SPRING_DATA_REDIS_PORT: 6379
-      SPRING_MAIL_USERNAME: jdksla0129@gmail.com
-      SPRING_MAIL_PASSWORD: lssp lkym yzax elth
-      JWT_SECRET: idi9i32u93z[i()@#rr2{()!@#R){I@!#R{R*I@(kfejdk;uwjfi;i;
+    env_file:
+      - .env
+    # DB/Redis가 준비될 때까지 기다리는 스크립트 사용 가능
+    entrypoint: ["./wait-for-it.sh", "mysql:3306", "--", "java", "-jar", "app.jar"]
 
 volumes:
   mysql_data:

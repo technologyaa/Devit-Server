@@ -18,18 +18,35 @@ import java.util.Date;
 public class JwtProvider {
 
     private final SecretKey secretKey;
-    private final long validityInSeconds = 3600000;
+    @Value("${Jwt.access-token-expiration}")
+    private int accessTokenExpiration;
+    @Value("${Jwt.refresh-token-expiration}")
+    private int refreshTokenExpiration;
 
     public JwtProvider(@Value("${Jwt.secret}")String secretKey) {
         this.secretKey = Keys.hmacShaKeyFor(secretKey.getBytes());
     }
 
-    public String createToken(String username, Role role) {
+    public String createAccessToken(String username, Role role) {
         Date now = new Date();
-        Date expiration = new Date(now.getTime() + validityInSeconds);
+        Date expiration = new Date(now.getTime() + accessTokenExpiration);
         return Jwts.builder()
-                .subject(username)
+                .subject("ACCESS")
+                .claim("username", username)
                 .claim("role", role)
+                .issuedAt(now)
+                .expiration(expiration)
+                .signWith(secretKey)
+                .compact();
+    }
+
+    public String createRefreshToken(String username) {
+        Date now = new Date();
+        Date expiration = new Date(now.getTime() + refreshTokenExpiration);
+
+        return Jwts.builder()
+                .subject("REFRESH")
+                .claim("username", username)
                 .issuedAt(now)
                 .expiration(expiration)
                 .signWith(secretKey)
@@ -42,18 +59,18 @@ public class JwtProvider {
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();
-        return claims.getSubject();
+        return claims.get("username", String.class);
     }
 
-    public Role getRole(String token) {
-        Claims claims = Jwts.parser()
-                .verifyWith(secretKey)
-                .build()
-                .parseSignedClaims(token)
-                .getPayload();
-        String roleString = claims.get("role", String.class);
-        return Role.valueOf(roleString);
-    }
+//    public Role getRole(String token) {
+//        Claims claims = Jwts.parser()
+//                .verifyWith(secretKey)
+//                .build()
+//                .parseSignedClaims(token)
+//                .getPayload();
+//        String roleString = claims.get("role", String.class);
+//        return Role.valueOf(roleString);
+//    }
 
     public boolean validateToken(String token) {
         try {

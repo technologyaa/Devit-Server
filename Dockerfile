@@ -1,4 +1,12 @@
-FROM openjdk:17
-ARG JAR_FILE=build/libs/*.jar
-COPY ${JAR_FILE} app.jar
-ENTRYPOINT ["java", "-jar", "/app.jar"]
+# 1. Build stage
+FROM gradle:7.6.1-jdk17 AS build
+WORKDIR /app
+COPY . /app
+RUN gradle build --no-daemon
+
+# 2. Run stage
+FROM openjdk:17-jdk-slim
+WORKDIR /app
+COPY --from=build /app/build/libs/*.jar app.jar
+EXPOSE 8080
+ENTRYPOINT ["java", "-jar", "app.jar"]
