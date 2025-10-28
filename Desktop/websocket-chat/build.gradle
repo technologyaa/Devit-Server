@@ -79,3 +79,12 @@ dependencies {
 tasks.named('test') {
     useJUnitPlatform()
 }
+
+// Jar 파일 이름 설정
+bootJar {
+    archiveFileName = "devit-${version}.jar"
+}
+
+jar {
+    enabled = false
+}
