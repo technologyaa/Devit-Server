@@ -1,6 +1,6 @@
-# WebSocket 채팅 애플리케이션
+# Devit - 실시간 협업 플랫폼
 
-Spring Boot와 WebSocket을 사용한 실시간 채팅 애플리케이션입니다.
+Spring Boot 기반의 실시간 협업 플랫폼입니다.
 
 ## 주요 기능
 
