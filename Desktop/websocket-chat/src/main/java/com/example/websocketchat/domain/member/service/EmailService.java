@@ -17,7 +17,7 @@ import java.util.Objects;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
-@Service
+// @Service
 @Slf4j
 @RequiredArgsConstructor
 public class EmailService {
