@@ -14,7 +14,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.Collections;
 
-@Service
+// @Service
 public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequest, OAuth2User> {
 
     private final UserRepository userRepository;
