@@ -22,7 +22,7 @@ import com.example.websocketchat.global.jwt.JwtAuthenticationFilter;
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
-    private final CustomOAuth2UserService customOAuth2UserService;
+    // private final CustomOAuth2UserService customOAuth2UserService;
 
     @Bean
     public BCryptPasswordEncoder bCryptPasswordEncoder() {
@@ -37,20 +37,12 @@ public class SecurityConfig {
                 .cors(cors -> {})
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/auth/**", "/email/**", "/", "/css/**", "/images/**", "/js/**", "/ws/chat/**").permitAll()
-                        .anyRequest().authenticated()
+                        .anyRequest().permitAll()  // 개발 단계: 모든 요청 허용
                 )
                 .logout(logout -> logout
                         .logoutSuccessUrl("/")
                         .invalidateHttpSession(true)   // 세션 무효화
                         .deleteCookies("JSESSIONID")   // 쿠키 삭제
-                )
-                .oauth2Login(oauth2 -> oauth2
-                        .loginPage("/")   // 로그인 페이지 (원하면 /login 으로 변경 가능)
-                        .defaultSuccessUrl("/", true) // 로그인 성공 시 이동할 URL
-                        .userInfoEndpoint(userInfo -> userInfo
-                                .userService(customOAuth2UserService)
-                        )
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
