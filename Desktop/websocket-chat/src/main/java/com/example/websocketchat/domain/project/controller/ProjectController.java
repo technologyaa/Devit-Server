@@ -20,10 +20,16 @@ public class ProjectController {
         return projectService.create(projectRequest);
     }
 
-    // read
+    // read all
     @GetMapping
     public List<Project> findAll() {
         return projectService.findAll();
+    }
+
+    // read one
+    @GetMapping("/{ProjectId}")
+    public Project findOne(@PathVariable Long ProjectId) {
+        return projectService.findOne(ProjectId);
     }
 
     // update
