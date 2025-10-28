@@ -8,13 +8,13 @@ import org.springframework.mail.javamail.JavaMailSenderImpl;
 
 import java.util.Properties;
 
-@Configuration
+// @Configuration
 public class EmailConfig {
 
     @Value("${spring.mail.username}") private String username;
     @Value("${spring.mail.password}") private String password;
 
-    @Bean
+    // @Bean
     public JavaMailSender getJavaMailSender() {
         JavaMailSenderImpl mailSender = new JavaMailSenderImpl();
         mailSender.setHost("smtp.gmail.com");
