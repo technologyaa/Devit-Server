@@ -20,8 +20,10 @@ public class JwtProvider {
     private final SecretKey secretKey;
     private final long validityInSeconds = 3600000;
 
-    public JwtProvider(@Value("${Jwt.secret}")String secretKey) {
-        this.secretKey = Keys.hmacShaKeyFor(secretKey.getBytes());
+    public JwtProvider() {
+        // 임시 개발용 시크릿 키
+        String defaultSecret = "mySecretKeyForDevelopmentOnlyPleaseChangeInProduction";
+        this.secretKey = Keys.hmacShaKeyFor(defaultSecret.getBytes());
     }
 
     public String createToken(String username, Role role) {
