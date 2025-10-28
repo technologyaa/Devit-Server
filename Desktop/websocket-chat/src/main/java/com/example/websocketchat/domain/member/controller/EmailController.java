@@ -12,7 +12,7 @@ import com.example.websocketchat.global.dto.ApiResponse;
 
 import java.util.Map;
 
-@RestController
+// @RestController
 @RequestMapping("/email")
 @RequiredArgsConstructor
 public class EmailController {
