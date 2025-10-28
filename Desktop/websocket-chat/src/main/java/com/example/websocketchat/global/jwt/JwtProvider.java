@@ -38,6 +38,30 @@ public class JwtProvider {
                 .compact();
     }
 
+    public String createAccessToken(String username, Role role) {
+        Date now = new Date();
+        Date expiration = new Date(now.getTime() + validityInSeconds);
+        return Jwts.builder()
+                .subject(username)
+                .claim("role", role)
+                .issuedAt(now)
+                .expiration(expiration)
+                .signWith(secretKey)
+                .compact();
+    }
+
+    public String createRefreshToken(String username) {
+        Date now = new Date();
+        // Refresh Token은 7일 유효
+        Date expiration = new Date(now.getTime() + (7 * 24 * 3600 * 1000));
+        return Jwts.builder()
+                .subject(username)
+                .issuedAt(now)
+                .expiration(expiration)
+                .signWith(secretKey)
+                .compact();
+    }
+
     public String getUsernameFromToken(String token) {
         Claims claims = Jwts.parser()
                 .verifyWith(secretKey)
