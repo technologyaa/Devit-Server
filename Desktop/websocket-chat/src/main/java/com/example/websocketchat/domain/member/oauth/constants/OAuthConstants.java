@@ -2,6 +2,7 @@ package com.example.websocketchat.domain.member.oauth.constants;
 
 /**
  * OAuth 관련 상수 정의
+ * 다양한 OAuth 제공자와 권한 관리에 필요한 상수들을 정의합니다.
  */
 public class OAuthConstants {
     

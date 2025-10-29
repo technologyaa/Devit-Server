@@ -22,6 +22,7 @@ import java.util.Collections;
 public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequest, OAuth2User> {
 
     private final UserRepository userRepository;
+    // 기본 사용자 권한 설정
     private static final String DEFAULT_ROLE = "ROLE_USER";
 
     @Override
