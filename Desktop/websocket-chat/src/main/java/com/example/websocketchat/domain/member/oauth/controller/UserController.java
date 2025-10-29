@@ -27,6 +27,7 @@ public class UserController {
 
     /**
      * 현재 로그인한 사용자 정보 조회
+     * 인증된 사용자의 프로필 정보를 반환합니다.
      * @param oAuth2User OAuth2 인증된 사용자 정보
      * @return 사용자 정보 응답
      */
