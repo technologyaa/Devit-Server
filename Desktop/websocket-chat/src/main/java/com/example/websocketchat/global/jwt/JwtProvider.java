@@ -19,7 +19,10 @@ public class JwtProvider {
 
     private final SecretKey secretKey;
     // Access Token 유효기간: 1시간 (3600000ms)
-    private final long validityInSeconds = 3600000;
+    public static final long ACCESS_TOKEN_VALIDITY = 3600000;
+    // Refresh Token 유효기간: 7일 (604800000ms)
+    public static final long REFRESH_TOKEN_VALIDITY = 7 * 24 * 3600 * 1000;
+    private final long validityInSeconds = ACCESS_TOKEN_VALIDITY;
 
     public JwtProvider() {
         // TODO: 운영 환경에서는 환경변수(JWT_SECRET)를 사용하도록 수정 필요
