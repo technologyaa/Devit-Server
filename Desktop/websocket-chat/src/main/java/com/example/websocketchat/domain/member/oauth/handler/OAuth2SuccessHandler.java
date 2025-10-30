@@ -29,6 +29,7 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         log.info("OAuth2 로그인 성공 - Email: {}, Name: {}", email, name);
         
         // 기본 성공 URL로 리다이렉트
+        // 로그인 성공 후 메인 페이지로 이동
         setDefaultTargetUrl("/");
         super.onAuthenticationSuccess(request, response, authentication);
     }
