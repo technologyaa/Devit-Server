@@ -21,7 +21,10 @@ public class ChatMessage {
     private Long id; // ID 필드 추가
 
     // 클라이언트가 보내는 JSON의 키와 이 필드 이름이 정확히 일치해야 합니다.
+    @Column(nullable = false, length = 100)
     private String sender;
+    
+    @Column(nullable = false, length = 1000)
     private String content; // 클라이언트의 JSON 필드명과 일치시킵니다.
 
     @Enumerated(EnumType.STRING) // Enum을 DB에 문자열로 저장
