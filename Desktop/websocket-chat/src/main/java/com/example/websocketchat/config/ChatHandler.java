@@ -55,6 +55,11 @@ public class ChatHandler extends TextWebSocketHandler {
             // JSON 문자열을 ChatMessage 객체로 변환
             // 클라이언트는 {"sender": "사용자이름", "content": "메시지 내용"} 형태의 JSON을 전송해야 합니다.
             chatMessage = objectMapper.readValue(payload, ChatMessage.class);
+            
+            // 메시지 유효성 검증
+            if (chatMessage.getContent() == null || chatMessage.getContent().trim().isEmpty()) {
+                throw new IllegalArgumentException("메시지 내용이 비어있습니다.");
+            }
 
             // 데이터베이스에 저장
             ChatMessage savedMessage = chatMessageRepository.save(chatMessage);
