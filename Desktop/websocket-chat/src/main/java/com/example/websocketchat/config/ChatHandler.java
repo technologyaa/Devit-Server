@@ -15,6 +15,7 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -64,9 +65,16 @@ public class ChatHandler extends TextWebSocketHandler {
             broadcastMessage(new TextMessage(broadcastPayload));
 
         } catch (IOException e) {
-            log.error("메시지 처리 오류 또는 JSON 파싱 오류: {}", e.getMessage());
-            // 클라이언트에게 오류 알림 (옵션)
-            session.sendMessage(new TextMessage("{\"error\": \"Invalid message format.\"}"));
+            log.error("메시지 처리 오류 또는 JSON 파싱 오류: {}", e.getMessage(), e);
+            // 클라이언트에게 오류 알림
+            try {
+                String errorMessage = objectMapper.writeValueAsString(
+                    Map.of("error", "Invalid message format.", "details", e.getMessage())
+                );
+                session.sendMessage(new TextMessage(errorMessage));
+            } catch (IOException ex) {
+                log.error("오류 메시지 전송 실패: {}", ex.getMessage());
+            }
         }
     }
 
