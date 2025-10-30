@@ -28,7 +28,8 @@ public class ChatMessage {
     private String content; // 클라이언트의 JSON 필드명과 일치시킵니다.
 
     @Enumerated(EnumType.STRING) // Enum을 DB에 문자열로 저장
-    private MessageType type; // 메시지 타입 (예: ENTER, TALK, LEAVE)
+    @Column(nullable = false)
+    private MessageType type = MessageType.TALK; // 메시지 타입 기본값: TALK
 
     // 메시지 생성 시간 저장
     private LocalDateTime timestamp = LocalDateTime.now();
