@@ -16,6 +16,9 @@ Spring Boot 기반의 실시간 협업 플랫폼입니다.
 - Spring Data JPA
 - MySQL
 - Lombok
+- Spring Security
+- OAuth2 (Google)
+- JWT
 
 ## 실행 방법
 
