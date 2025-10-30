@@ -58,7 +58,7 @@ public class JwtProvider {
     public String createRefreshToken(String username) {
         Date now = new Date();
         // Refresh Token은 7일 유효
-        Date expiration = new Date(now.getTime() + (7 * 24 * 3600 * 1000));
+        Date expiration = new Date(now.getTime() + REFRESH_TOKEN_VALIDITY);
         return Jwts.builder()
                 .subject(username)
                 .issuedAt(now)
