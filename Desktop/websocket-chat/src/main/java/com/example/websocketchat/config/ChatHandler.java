@@ -90,7 +90,8 @@ public class ChatHandler extends TextWebSocketHandler {
     @Override
     public void afterConnectionClosed(WebSocketSession session, CloseStatus status) throws Exception {
         sessions.remove(session);
-        log.info("세션 연결 종료됨: {}. 현재 세션 수: {}", session.getId(), sessions.size());
+        log.info("세션 연결 종료됨: {}. 현재 세션 수: {}, 종료 상태: {}", 
+                session.getId(), sessions.size(), status.getCode());
     }
 
     /**
