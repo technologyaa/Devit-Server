@@ -7,5 +7,11 @@ import org.springframework.stereotype.Repository;
 // ChatMessage 엔티티와 Long 타입의 ID를 사용하는 JpaRepository
 @Repository
 public interface ChatMessageRepository extends JpaRepository<ChatMessage, Long> {
-    // 추가적인 사용자 정의 쿼리가 필요하면 여기에 정의합니다.
+    // 페이징을 위한 쿼리 메서드
+    org.springframework.data.domain.Page<ChatMessage> findAllByOrderByTimestampDesc(
+            org.springframework.data.domain.Pageable pageable);
+    
+    // 특정 시간 이후 메시지 조회
+    java.util.List<ChatMessage> findByTimestampAfterOrderByTimestampAsc(
+            java.time.LocalDateTime timestamp);
 }
