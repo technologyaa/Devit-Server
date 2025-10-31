@@ -8,6 +8,10 @@ import org.springframework.mail.javamail.JavaMailSenderImpl;
 
 import java.util.Properties;
 
+/**
+ * 이메일 발송 설정 클래스
+ * 이메일 기능을 사용하려면 주석을 해제하고 application.properties의 Mail 설정도 활성화하세요.
+ */
 // @Configuration
 public class EmailConfig {
 

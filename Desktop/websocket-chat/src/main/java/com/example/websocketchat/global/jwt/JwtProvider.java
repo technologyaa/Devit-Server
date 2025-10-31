@@ -18,10 +18,12 @@ import java.util.Date;
 public class JwtProvider {
 
     private final SecretKey secretKey;
+    // Access Token 유효기간: 1시간 (3600000ms)
     private final long validityInSeconds = 3600000;
 
     public JwtProvider() {
-        // 임시 개발용 시크릿 키
+        // TODO: 운영 환경에서는 환경변수(JWT_SECRET)를 사용하도록 수정 필요
+        // 임시 개발용 시크릿 키 (application.properties의 Jwt.secret 값과 동일하게 유지)
         String defaultSecret = "mySecretKeyForDevelopmentOnlyPleaseChangeInProduction";
         this.secretKey = Keys.hmacShaKeyFor(defaultSecret.getBytes());
     }

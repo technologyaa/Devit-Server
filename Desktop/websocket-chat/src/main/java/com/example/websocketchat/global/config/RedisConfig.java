@@ -10,6 +10,10 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.repository.configuration.EnableRedisRepositories;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
+/**
+ * Redis 설정 클래스
+ * Redis를 사용하려면 주석을 해제하고 application.properties의 Redis 설정도 활성화하세요.
+ */
 // @EnableRedisRepositories
 // @RequiredArgsConstructor
 // @Configuration
