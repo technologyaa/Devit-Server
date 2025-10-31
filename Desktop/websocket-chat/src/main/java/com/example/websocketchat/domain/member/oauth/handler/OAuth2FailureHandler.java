@@ -24,7 +24,10 @@ public class OAuth2FailureHandler extends SimpleUrlAuthenticationFailureHandler 
         log.error("OAuth2 로그인 실패 - 에러: {}", exception.getMessage(), exception);
         
         // 로그인 실패 시 로그인 페이지로 리다이렉트하고 에러 파라미터 추가
-        setDefaultFailureUrl("/login?error=true");
+        String errorMessage = java.net.URLEncoder.encode(
+                exception.getMessage() != null ? exception.getMessage() : "알 수 없는 오류",
+                java.nio.charset.StandardCharsets.UTF_8);
+        setDefaultFailureUrl("/login?error=true&message=" + errorMessage);
         super.onAuthenticationFailure(request, response, exception);
     }
 }
