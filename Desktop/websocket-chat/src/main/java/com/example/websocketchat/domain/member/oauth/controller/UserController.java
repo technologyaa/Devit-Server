@@ -40,6 +40,13 @@ public class UserController {
         }
 
         String email = oAuth2User.getAttribute("email");
+        if (email == null || email.trim().isEmpty()) {
+            log.warn("OAuth2User에서 이메일을 찾을 수 없음");
+            return ResponseEntity.ok(UserInfoResponse.builder()
+                    .isAuthenticated(false)
+                    .build());
+        }
+        
         Optional<User> userOptional = userRepository.findByEmail(email);
 
         if (userOptional.isEmpty()) {
