@@ -88,6 +88,11 @@ public class JwtProvider {
 
     public boolean validateToken(String token) {
         try {
+            if (token == null || token.trim().isEmpty()) {
+                log.warn("토큰이 비어있습니다.");
+                return false;
+            }
+            
             Jwts.parser()
                     .verifyWith(secretKey)
                     .build()
@@ -95,7 +100,7 @@ public class JwtProvider {
                     .getPayload();
             return true;
         } catch (JwtException e) {
-            log.error(e.getMessage());
+            log.error("JWT 토큰 검증 실패: {}", e.getMessage());
             return false;
         }
     }
