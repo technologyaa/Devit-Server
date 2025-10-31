@@ -39,8 +39,11 @@ public class ChatHandler extends TextWebSocketHandler {
     public void afterConnectionEstablished(WebSocketSession session) throws Exception {
         sessions.add(session);
         log.info("새 세션 연결됨: {}. 현재 세션 수: {}", session.getId(), sessions.size());
+        
+        // 세션 타임아웃 설정 (30분)
+        session.setMaxIdleTimeout(1800000);
 
-        // 연결 시 기존 메시지를 불러와 전송 (옵션)
+        // 연결 시 기존 메시지를 불러와 전송
         loadAndSendPreviousMessages(session);
     }
 
