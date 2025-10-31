@@ -40,7 +40,9 @@ public class SecurityConfig {
                 .httpBasic(AbstractHttpConfigurer::disable)
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(cors -> {})
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .sessionManagement(session -> session
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                        .maximumSessions(1)) // 동일 사용자 최대 1개 세션만 허용
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/login", "/oauth2/**", "/", "/static/**", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         .requestMatchers("/api/users/me").authenticated()
