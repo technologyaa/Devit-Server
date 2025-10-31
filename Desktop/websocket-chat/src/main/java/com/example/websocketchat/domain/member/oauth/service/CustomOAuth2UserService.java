@@ -41,7 +41,8 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
                 oAuth2User.getAttributes()
         );
 
-        log.info("OAuth 로그인 시도 - Email: {}, Provider: {}", attributes.getEmail(), attributes.getProvider());
+        log.info("OAuth 로그인 시도 - Email: {}, Provider: {}, RegistrationId: {}", 
+                attributes.getEmail(), attributes.getProvider(), registrationId);
 
         // DB에 사용자 저장 또는 업데이트
         User user = saveOrUpdate(attributes);
