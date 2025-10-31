@@ -120,11 +120,12 @@ public class ChatHandler extends TextWebSocketHandler {
         try {
             log.info("채팅 히스토리 로딩 시작...");
             
-            // 최근 50개 메시지만 불러와서 오래된 순서대로 정렬 (성능 최적화)
-            List<ChatMessage> messages = chatMessageRepository.findAll().stream()
-                    .sorted((m1, m2) -> m2.getTimestamp().compareTo(m1.getTimestamp())) // 최신순
-                    .limit(50) // 최근 50개만
-                    .sorted((m1, m2) -> m1.getTimestamp().compareTo(m2.getTimestamp())) // 오래된 순서로 재정렬
+            // Repository의 페이징 메서드를 사용하여 최근 메시지 조회
+            Pageable pageable = PageRequest.of(0, 50, Sort.by("timestamp").ascending());
+            Page<ChatMessage> messagePage = chatMessageRepository.findAllByOrderByTimestampDesc(
+                    PageRequest.of(0, 50, Sort.by("timestamp").descending()));
+            List<ChatMessage> messages = messagePage.getContent().stream()
+                    .sorted((m1, m2) -> m1.getTimestamp().compareTo(m2.getTimestamp()))
                     .collect(Collectors.toList());
             
             log.info("히스토리 메시지 개수: {}", messages.size());
