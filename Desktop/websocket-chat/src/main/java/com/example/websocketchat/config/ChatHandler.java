@@ -100,15 +100,23 @@ public class ChatHandler extends TextWebSocketHandler {
      * @param message 브로드캐스트할 메시지
      */
     private void broadcastMessage(TextMessage message) {
+        final int[] counts = {0, 0}; // [성공, 실패]
+        
         sessions.forEach(session -> {
             if (session.isOpen()) {
                 try {
                     session.sendMessage(message);
+                    counts[0]++;
                 } catch (IOException e) {
                     log.error("메시지 전송 오류 (세션 {}): {}", session.getId(), e.getMessage());
+                    counts[1]++;
                 }
             }
         });
+        
+        if (counts[1] > 0) {
+            log.warn("브로드캐스트 통계 - 성공: {}, 실패: {}", counts[0], counts[1]);
+        }
     }
 
     /**
