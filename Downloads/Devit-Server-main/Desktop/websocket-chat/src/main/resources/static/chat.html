@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>💬 실시간 채팅</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .chat-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .message-box {
+            padding: 12px 16px;
+            border-radius: 18px;
+            margin-bottom: 12px;
+            max-width: 70%;
+            word-wrap: break-word;
+            animation: messageSlide 0.3s ease-out;
+            position: relative;
+        }
+        
+        .my-message {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            margin-left: auto;
+            text-align: right;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+        
+        .other-message {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            margin-right: auto;
+            text-align: left;
+            box-shadow: 0 4px 12px rgba(240, 147, 251, 0.3);
+        }
+        
+        .system-message {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            text-align: center;
+            margin: 8px auto;
+            max-width: 80%;
+            box-shadow: 0 2px 8px rgba(79, 172, 254, 0.3);
+        }
+        
+        @keyframes messageSlide {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .chat-window {
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            border: 1px solid rgba(226, 232, 240, 0.5);
+        }
+        
+        .input-group {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .send-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            transition: all 0.3s ease;
+        }
+        
+        .send-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+        }
+        
+        .status-connected {
+            color: #10b981;
+            animation: pulse 2s infinite;
+        }
+        
+        .status-disconnected {
+            color: #ef4444;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .typing-indicator {
+            display: none;
+            padding: 8px 16px;
+            background: rgba(102, 126, 234, 0.1);
+            border-radius: 18px;
+            margin: 8px 0;
+            font-style: italic;
+            color: #667eea;
+        }
+        
+        .message-time {
+            font-size: 0.75rem;
+            opacity: 0.8;
+            margin-top: 4px;
+        }
+        
+        .message-sender {
+            font-weight: 600;
+            font-size: 0.875rem;
+            margin-bottom: 4px;
+        }
+        
+        .message-content {
+            line-height: 1.4;
+        }
+        
+        .scrollbar-hide {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+        }
+        
+        /* 입력창 focus ring 완전 제거 */
+        input:focus {
+            outline: none !important;
+            box-shadow: none !important;
+            border-color: #d1d5db !important;
+        }
+        
+        input:focus-visible {
+            outline: none !important;
+            box-shadow: none !important;
+        }
+        
+        /* Tailwind focus ring 완전 제거 */
+        input:focus {
+            --tw-ring-shadow: none !important;
+            --tw-ring-color: transparent !important;
+        }
+    </style>
+</head>
+<body class="p-4">
+
+<div class="chat-container rounded-2xl p-8 max-w-4xl mx-auto shadow-2xl">
+    <div class="text-center mb-8">
+        <h1 class="text-4xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent mb-2">
+            💬 실시간 채팅
+        </h1>
+        <p class="text-gray-600">WebSocket을 통한 실시간 메시징</p>
+    </div>
+
+    <div id="chat-window" class="chat-window h-[500px] overflow-y-auto p-6 mb-6 rounded-2xl flex flex-col scrollbar-hide">
+        <!-- 메시지들이 여기에 표시됩니다 -->
+    </div>
+
+    <div class="input-group rounded-2xl p-4">
+        <div class="flex space-x-3">
+            <input type="text" id="sender-input" value="익명사용자" 
+                   class="flex-1 p-3 border-2 border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 bg-white/80" 
+                   placeholder="닉네임을 입력하세요" disabled>
+            <input type="text" id="message-input" 
+                   class="flex-2 p-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 bg-white/80" 
+                   placeholder="메시지를 입력하세요..." 
+                   onkeyup="if(event.key === 'Enter') sendMessage()">
+            <button id="send-button" onclick="sendMessage()" 
+                    class="send-button text-white font-semibold py-3 px-6 rounded-xl shadow-lg transition-all duration-200 hover:scale-105">
+                <span class="flex items-center">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+                    </svg>
+                    전송
+                </span>
+            </button>
+        </div>
+    </div>
+
+    <div id="status" class="mt-6 text-center">
+        <div class="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium">
+            <div class="w-2 h-2 rounded-full bg-red-500 mr-2"></div>
+            <span class="status-disconnected">연결 끊김</span>
+        </div>
+    </div>
+</div>
+
+<script>
+    // 현재 접속한 사용자의 임의 ID를 생성 (세션 구분을 위함)
+    const MY_SENDER_ID = 'user-' + Math.random().toString(36).substring(2, 9);
+
+    // 로컬 서버 WebSocket 연결 설정
+    const SERVER_HOST = window.location.host; // 현재 페이지의 호스트 사용 (localhost:8080)
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'; // 프로토콜에 따라 자동 선택
+    const endpoint = "/ws/chat"; // Spring Boot 웹소켓 엔드포인트 경로
+
+    const websocketUrl = `${protocol}//${SERVER_HOST}${endpoint}`;
+    console.log("🔗 WebSocket 연결 시도:", websocketUrl);
+    
+    let websocket;
+    let reconnectAttempts = 0;
+    const maxReconnectAttempts = 5;
+    const reconnectDelay = 3000; // 3초
+    let isLoadingHistory = false;
+    let historyLoaded = false;
+    let historyLoadTimeout;
+    let lastMessageTime = Date.now();
+    
+    function connectWebSocket() {
+        try {
+            websocket = new WebSocket(websocketUrl);
+            setupWebSocketHandlers();
+        } catch (error) {
+            console.error("❌ WebSocket 연결 생성 실패:", error);
+            showConnectionError("WebSocket 연결을 생성할 수 없습니다.");
+        }
+    }
+    
+    function setupWebSocketHandlers() {
+        // 1. 연결 성공 시
+        websocket.onopen = function() {
+            console.log("✅ 웹소켓 서버에 연결되었습니다. 주소:", websocketUrl);
+            reconnectAttempts = 0; // 연결 성공 시 재시도 횟수 초기화
+            
+            statusDiv.innerHTML = `
+                <div class="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium">
+                    <div class="w-2 h-2 rounded-full bg-green-500 mr-2 animate-pulse"></div>
+                    <span class="status-connected">연결 성공</span>
+                </div>
+            `;
+            
+            // 히스토리 로딩 시작
+            isLoadingHistory = true;
+            historyLoaded = false;
+            console.log("📚 채팅 히스토리 로딩 시작...");
+            
+            // 채팅창 초기화 (히스토리가 로드될 예정)
+            chatWindow.innerHTML = '';
+            
+            // 1초 후 히스토리 로딩 완료로 설정 (이후부터는 자동 스크롤 안 됨)
+            setTimeout(() => {
+                isLoadingHistory = false;
+                historyLoaded = true;
+                // 마지막으로 한 번 더 스크롤을 맨 아래로
+                requestAnimationFrame(() => {
+                    chatWindow.scrollTop = chatWindow.scrollHeight;
+                });
+                console.log("📚 히스토리 로딩 완료!");
+            }, 1000);
+            
+            // 처음 연결 시 입장 메시지를 보냅니다 (ENTER 타입)
+            sendControlMessage(senderInput.value, 'ENTER');
+        };
+
+        // 2. 메시지 수신 시
+        websocket.onmessage = function(event) {
+            const payload = event.data;
+            console.log("📨 메시지 수신:", payload);
+
+            try {
+                // 서버에서 보낸 JSON 문자열을 객체로 변환
+                const message = JSON.parse(payload);
+
+                // 오류 메시지 처리
+                if (message.error) {
+                    displayMessage('System', `오류: ${message.error}`, 'system');
+                    return;
+                }
+
+                // ChatMessage DTO 형태의 메시지를 화면에 표시
+                displayMessage(message.sender, message.content, message.type, message.timestamp);
+                
+                // 히스토리 로딩 중에는 스크롤을 계속 맨 아래로 유지
+                if (isLoadingHistory) {
+                    requestAnimationFrame(() => {
+                        chatWindow.scrollTop = chatWindow.scrollHeight;
+                    });
+                }
+
+            } catch (e) {
+                console.error("❌ 수신 메시지 파싱 오류:", e);
+                console.error("문제가 된 원본 데이터:", payload);
+                // 오류 메시지는 표시하지 않고 로그만 남김
+            }
+        };
+
+        // 3. 연결 닫힘 시
+        websocket.onclose = function(event) {
+            console.log("❌ 웹소켓 연결이 종료되었습니다. 코드:", event.code, "이유:", event.reason);
+            
+            // 정상적인 종료가 아닌 경우에만 재연결 시도
+            if (event.code !== 1000 && reconnectAttempts < maxReconnectAttempts) {
+                reconnectAttempts++;
+                console.log(`🔄 재연결 시도 ${reconnectAttempts}/${maxReconnectAttempts}`);
+                
+                statusDiv.innerHTML = `
+                    <div class="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium">
+                        <div class="w-2 h-2 rounded-full bg-yellow-500 mr-2 animate-pulse"></div>
+                        <span class="text-yellow-600">재연결 시도 중... (${reconnectAttempts}/${maxReconnectAttempts})</span>
+                    </div>
+                `;
+                
+                setTimeout(() => {
+                    connectWebSocket();
+                }, reconnectDelay);
+            } else {
+                statusDiv.innerHTML = `
+                    <div class="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium">
+                        <div class="w-2 h-2 rounded-full bg-red-500 mr-2"></div>
+                        <span class="status-disconnected">연결 끊김</span>
+                    </div>
+                `;
+                showConnectionError("연결이 끊어졌습니다. 페이지를 새로고침해주세요.");
+            }
+        };
+
+        // 4. 오류 발생 시
+        websocket.onerror = function(error) {
+            console.error("❌ 웹소켓 오류 발생:", error);
+            
+            if (reconnectAttempts < maxReconnectAttempts) {
+                reconnectAttempts++;
+                console.log(`🔄 오류 후 재연결 시도 ${reconnectAttempts}/${maxReconnectAttempts}`);
+                
+                statusDiv.innerHTML = `
+                    <div class="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium">
+                        <div class="w-2 h-2 rounded-full bg-yellow-500 mr-2 animate-pulse"></div>
+                        <span class="text-yellow-600">재연결 시도 중... (${reconnectAttempts}/${maxReconnectAttempts})</span>
+                    </div>
+                `;
+                
+                setTimeout(() => {
+                    connectWebSocket();
+                }, reconnectDelay);
+            } else {
+                statusDiv.innerHTML = `
+                    <div class="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium">
+                        <div class="w-2 h-2 rounded-full bg-red-500 mr-2"></div>
+                        <span class="status-disconnected">오류 발생</span>
+                    </div>
+                `;
+                showConnectionError("서버에 연결할 수 없습니다. 서버가 실행 중인지 확인해주세요.");
+            }
+        };
+    }
+    
+    // DOM 요소들
+    const chatWindow = document.getElementById('chat-window');
+    const messageInput = document.getElementById('message-input');
+    const senderInput = document.getElementById('sender-input');
+    const statusDiv = document.getElementById('status');
+
+    // 로그인된 사용자 정보 불러오기
+    const loggedInUsername = localStorage.getItem('username');
+    if (loggedInUsername) {
+        senderInput.value = loggedInUsername;
+    }
+
+    // WebSocket 연결 시작
+    connectWebSocket();
+
+    // 메시지 전송 함수 (TALK 타입)
+    function sendMessage() {
+        if (websocket.readyState === WebSocket.OPEN) {
+            const sender = senderInput.value || '익명';
+            const content = messageInput.value.trim();
+
+            if (content === "") return;
+
+            // 서버의 ChatMessage DTO에 맞게 객체 생성
+            const chatMessage = {
+                sender: sender,
+                content: content,
+                type: "TALK" // 일반 채팅 메시지 타입
+                // ID와 timestamp는 서버에서 처리됩니다.
+            };
+
+            // 객체를 JSON 문자열로 변환(직렬화)하여 전송합니다.
+            websocket.send(JSON.stringify(chatMessage));
+
+            // 입력창 초기화
+            messageInput.value = '';
+            messageInput.focus();
+        } else {
+            alertMessage('웹소켓 연결이 끊어졌습니다.');
+        }
+    }
+
+    // 제어 메시지 전송 함수 (ENTER, LEAVE 등)
+    function sendControlMessage(senderName, type) {
+        if (websocket.readyState === WebSocket.OPEN) {
+            const message = {
+                sender: senderName,
+                content: type === 'ENTER' ? `${senderName} 님이 입장했습니다.` : `${senderName} 님이 나갔습니다.`,
+                type: type
+            };
+            websocket.send(JSON.stringify(message));
+        }
+    }
+
+    // 시간 형식을 '오후 7:58' 형태로 변환하는 유틸리티 함수
+    function formatTime(timestamp) {
+        if (!timestamp) return '';
+
+        let date;
+        try {
+            // Spring Boot에서 LocalDateTime이 'YYYY-MM-DDTHH:MM:SS.SSS' 형태의 문자열로 전송됨
+            if (typeof timestamp === 'string') {
+                date = new Date(timestamp);
+            } else {
+                date = new Date(timestamp);
+            }
+        } catch (e) {
+            return '';
+        }
+
+        if (isNaN(date.getTime())) {
+            return '';
+        }
+
+        const hours = date.getHours();
+        const minutes = date.getMinutes().toString().padStart(2, '0');
+        const ampm = hours >= 12 ? '오후' : '오전';
+        const displayHours = hours % 12 || 12; // 0시를 12시로 표시
+
+        return `${ampm} ${displayHours}:${minutes}`;
+    }
+
+    // 메시지 화면 출력 함수
+    function displayMessage(sender, content, type, timestamp) {
+        const messageElement = document.createElement('div');
+        const senderId = senderInput.value; // 현재 사용자의 닉네임
+
+        // 메시지 타입에 따른 스타일 및 내용 결정
+        if (type === 'ENTER' || type === 'LEAVE') {
+            messageElement.className = 'message-box system-message';
+            messageElement.innerHTML = `
+                <div class="message-content">${content}</div>
+            `;
+        } else {
+            // 일반 대화 메시지
+            const isMyMessage = sender === senderId; // 닉네임으로 판단
+
+            messageElement.className = `message-box ${isMyMessage ? 'my-message' : 'other-message'}`;
+            messageElement.innerHTML = `
+                <div class="message-sender">${sender}</div>
+                <div class="message-content">${content}</div>
+                <div class="message-time">${formatTime(timestamp)}</div>
+            `;
+        }
+
+        chatWindow.appendChild(messageElement);
+        
+        // 히스토리 로딩이 완료된 경우에만 자동 스크롤
+        // (히스토리 로딩 중에는 스크롤하지 않음)
+        if (!isLoadingHistory || historyLoaded) {
+            // 약간의 지연을 두고 스크롤하여 DOM 업데이트를 기다림
+            setTimeout(() => {
+                chatWindow.scrollTop = chatWindow.scrollHeight;
+            }, 10);
+        }
+    }
+
+    // 연결 오류 메시지 표시 함수
+    function showConnectionError(message) {
+        chatWindow.innerHTML = `
+            <div class="flex items-center justify-center h-full">
+                <div class="text-center">
+                    <div class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </div>
+                    <p class="text-red-600 font-medium">${message}</p>
+                    <p class="text-gray-500 text-sm mt-2">페이지를 새로고침하거나 서버 상태를 확인해주세요.</p>
+                    <div class="mt-4 space-x-2">
+                        <button onclick="location.reload()" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">
+                            새로고침
+                        </button>
+                        <button onclick="connectWebSocket()" class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors">
+                            재연결
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    // 간단한 커스텀 알림 메시지 함수
+    function alertMessage(message) {
+        // 기존 alert() 대신 사용할 간단한 표시
+        const tempAlert = document.createElement('div');
+        tempAlert.className = 'fixed top-4 right-4 bg-gradient-to-r from-yellow-400 to-orange-400 text-white p-4 rounded-xl shadow-2xl z-50 transition-all duration-300 transform';
+        tempAlert.innerHTML = `
+            <div class="flex items-center">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                </svg>
+                ${message}
+            </div>
+        `;
+        document.body.appendChild(tempAlert);
+        
+        // 애니메이션 효과
+        setTimeout(() => {
+            tempAlert.style.transform = 'translateX(100%)';
+            tempAlert.style.opacity = '0';
+        }, 2500);
+        
+        setTimeout(() => tempAlert.remove(), 3000);
+    }
+
+    // 창을 닫을 때 나가는 메시지 전송
+    window.addEventListener('beforeunload', () => {
+        sendControlMessage(senderInput.value, 'LEAVE');
+        websocket.close();
+    });
+</script>
+
+</body>
+</html>
