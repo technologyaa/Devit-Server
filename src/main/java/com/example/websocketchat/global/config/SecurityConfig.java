@@ -41,13 +41,15 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(cors -> {})
                 .sessionManagement(session -> session
-                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-                        .maximumSessions(1)) // 동일 사용자 최대 1개 세션만 허용
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/login", "/oauth2/**", "/", "/static/**", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
-                        .requestMatchers("/api/users/me").authenticated()
-                        .anyRequest().authenticated()
+                        .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
                 )
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/login", "/", "/static/**", "/swagger-ui/**", "/v3/api-docs/**", "/login.html", "/signup.html", "/chat.html", "/project.html", "/index.html", "/auth/**", "/*.html", "/ws/**").permitAll()
+                        .requestMatchers("/oauth2/**").permitAll() // OAuth 로그인 허용
+                        .requestMatchers("/api/users/me").permitAll() // 로그인 상태 확인용
+                        .anyRequest().permitAll() // 임시로 모든 요청 허용 (테스트용)
+                )
+                // OAuth 로그인 활성화
                 .oauth2Login(oauth2 -> oauth2
                         .userInfoEndpoint(userInfo -> userInfo
                                 .userService(customOAuth2UserService)
