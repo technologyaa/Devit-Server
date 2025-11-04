@@ -26,13 +26,54 @@
                 <p class="text-gray-600">실시간 채팅 & 프로젝트 관리 시스템</p>
             </div>
 
-            <div class="space-y-4">
+            <!-- 로그인된 사용자 정보 표시 -->
+            <div id="userInfo" class="mb-4 p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg hidden">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <img id="userPicture" src="" alt="프로필" class="w-10 h-10 rounded-full border-2 border-purple-300">
+                        <div>
+                            <p id="userName" class="font-semibold text-gray-800"></p>
+                            <p id="userEmail" class="text-sm text-gray-600"></p>
+                        </div>
+                    </div>
+                    <a href="/logout" class="bg-gradient-to-r from-red-500 to-red-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:shadow-lg transition duration-300">
+                        로그아웃
+                    </a>
+                </div>
+            </div>
+
+            <div id="authButtons" class="space-y-4">
                 <a href="/signup.html" class="block w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white py-4 px-6 rounded-lg text-center font-semibold hover:shadow-lg transition duration-300">
                     📝 회원가입
                 </a>
-                <a href="/login.html" class="block w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-4 px-6 rounded-lg text-center font-semibold hover:shadow-lg transition duration-300">
+                <a href="/login.html" id="loginButton" class="block w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-4 px-6 rounded-lg text-center font-semibold hover:shadow-lg transition duration-300">
                     🔐 로그인
                 </a>
+                
+                <!-- 구분선 -->
+                <div id="divider" class="relative my-6">
+                    <div class="absolute inset-0 flex items-center">
+                        <div class="w-full border-t border-gray-300"></div>
+                    </div>
+                    <div class="relative flex justify-center text-sm">
+                        <span class="px-2 bg-white text-gray-500">또는</span>
+                    </div>
+                </div>
+
+                <!-- Google OAuth 로그인 버튼 -->
+                <a href="/oauth2/authorization/google" id="googleLoginButton"
+                   class="w-full flex items-center justify-center gap-3 bg-white border-2 border-gray-300 text-gray-700 py-4 px-6 rounded-lg font-semibold hover:bg-gray-50 hover:border-gray-400 transition duration-300 shadow-sm">
+                    <svg class="w-5 h-5" viewBox="0 0 24 24">
+                        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                    </svg>
+                    <span>Google로 로그인</span>
+                </a>
+            </div>
+
+            <div class="space-y-4 mt-4">
                 <a href="/chat.html" class="block w-full bg-gradient-to-r from-green-600 to-teal-600 text-white py-4 px-6 rounded-lg text-center font-semibold hover:shadow-lg transition duration-300">
                     💬 채팅방
                 </a>
@@ -52,13 +93,85 @@
     </div>
 
     <script>
+        // 로그인 상태 확인 및 UI 업데이트
+        async function checkLoginStatus() {
+            try {
+                const response = await fetch('/api/users/me', {
+                    method: 'GET',
+                    credentials: 'include', // 쿠키 포함하여 세션 전송
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error('응답 오류');
+                }
+                
+                const data = await response.json();
+                console.log('로그인 상태 확인 결과:', data);
+                
+                if (data.isAuthenticated) {
+                    // 로그인된 상태
+                    document.getElementById('userInfo').classList.remove('hidden');
+                    document.getElementById('userName').textContent = data.name || '사용자';
+                    document.getElementById('userEmail').textContent = data.email || '';
+                    if (data.picture) {
+                        document.getElementById('userPicture').src = data.picture;
+                    } else {
+                        document.getElementById('userPicture').src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMjAiIGZpbGw9IiM5QzMzRjYiLz4KPHN2ZyB4PSIxMCIgeT0iMTAiIHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPgo8cGF0aCBkPSJNMTIgMTJDMTQuMjA5MSAxMiAxNiAxMC4yMDkxIDE2IDhDMTYgNS43OTA4NiAxNC4yMDkxIDQgMTIgNEM5Ljc5MDg2IDQgOCA1Ljc5MDg2IDggOEM4IDEwLjIwOTEgOS43OTA4NiAxMiAxMiAxMloiIGZpbGw9IndoaXRlIi8+CjxwYXRoIGQ9Ik0xMiAxNEMxNS4zMTM3IDE0IDE4IDExLjMxMzcgMTggOEMxOCA0LjY4NjMgMTUuMzEzNyAyIDEyIDJDNy45Njg2MyAyIDQuNjg2MyA0LjY4NjMgNC42ODYzIDhDNS4zMTM3IDExLjMxMzcgNy45Njg2MyAxNCAxMiAxNFoiIGZpbGw9IndoaXRlIi8+Cjwvc3ZnPgo8L3N2Zz4=';
+                    }
+                    
+                    // 로그인 버튼 숨기기
+                    document.getElementById('loginButton').classList.add('hidden');
+                    document.getElementById('googleLoginButton').classList.add('hidden');
+                    // 구분선도 숨기기
+                    document.getElementById('divider').classList.add('hidden');
+                } else {
+                    // 로그인되지 않은 상태
+                    document.getElementById('userInfo').classList.add('hidden');
+                    document.getElementById('loginButton').classList.remove('hidden');
+                    document.getElementById('googleLoginButton').classList.remove('hidden');
+                    // 구분선 표시
+                    document.getElementById('divider').classList.remove('hidden');
+                }
+            } catch (error) {
+                console.error('로그인 상태 확인 실패:', error);
+                // 에러 발생 시 로그인 버튼 표시
+                document.getElementById('userInfo').classList.add('hidden');
+                document.getElementById('loginButton').classList.remove('hidden');
+                document.getElementById('googleLoginButton').classList.remove('hidden');
+                document.getElementById('divider').classList.remove('hidden');
+            }
+        }
+
+        // 페이지 로드 시 로그인 상태 확인
+        window.addEventListener('DOMContentLoaded', function() {
+            // 즉시 확인
+            checkLoginStatus();
+            // OAuth 리다이렉트 후 세션 설정 지연을 고려하여 재확인
+            setTimeout(checkLoginStatus, 500);
+        });
+        
+        // 페이지가 이미 로드된 경우에도 확인
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', checkLoginStatus);
+        } else {
+            checkLoginStatus();
+            setTimeout(checkLoginStatus, 500);
+        }
+
         // 서버 상태 확인
         fetch('/auth/test')
-            .then(() => {
-                document.getElementById('serverStatus').innerHTML = `
-                    <div class="w-3 h-3 bg-green-400 rounded-full mr-2"></div>
-                    <span class="text-sm font-semibold text-green-600">서버 정상 작동 중</span>
-                `;
+            .then(response => {
+                if (response.ok) {
+                    document.getElementById('serverStatus').innerHTML = `
+                        <div class="w-3 h-3 bg-green-400 rounded-full mr-2"></div>
+                        <span class="text-sm font-semibold text-green-600">서버 정상 작동 중</span>
+                    `;
+                } else {
+                    throw new Error('서버 응답 오류');
+                }
             })
             .catch(() => {
                 document.getElementById('serverStatus').innerHTML = `
@@ -69,3 +182,4 @@
     </script>
 </body>
 </html>
+
