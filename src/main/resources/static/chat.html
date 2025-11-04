@@ -204,12 +204,13 @@
     // 현재 접속한 사용자의 임의 ID를 생성 (세션 구분을 위함)
     const MY_SENDER_ID = 'user-' + Math.random().toString(36).substring(2, 9);
 
-    // ngrok을 통한 공개 WebSocket 연결 설정
-    const SERVER_HOST = "kourtney-rewirable-fumiko.ngrok-free.dev";
-    const protocol = 'wss'; // ngrok은 HTTPS를 사용하므로 웹소켓은 WSS를 사용해야 합니다
+    // 로컬 WebSocket 연결 설정
+    const SERVER_HOST = window.location.hostname || "localhost";
+    const SERVER_PORT = window.location.port || "8080";
+    const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws'; // HTTPS면 WSS, HTTP면 WS
     const endpoint = "/ws/chat"; // Spring Boot 웹소켓 엔드포인트 경로
 
-    const websocketUrl = `${protocol}://${SERVER_HOST}${endpoint}`;
+    const websocketUrl = `${protocol}://${SERVER_HOST}:${SERVER_PORT}${endpoint}`;
     console.log("🔗 WebSocket 연결 시도:", websocketUrl);
     
     let websocket;
