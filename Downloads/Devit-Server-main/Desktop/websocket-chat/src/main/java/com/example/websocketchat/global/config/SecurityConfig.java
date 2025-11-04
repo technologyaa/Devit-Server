@@ -45,8 +45,7 @@ public class SecurityConfig {
                         .maximumSessions(1)) // 동일 사용자 최대 1개 세션만 허용
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/login", "/oauth2/**", "/", "/static/**", "/swagger-ui/**", "/v3/api-docs/**", "/auth/**", 
-                                        "/*.html", "/*.css", "/*.js", "/*.ico", "/favicon.ico", "/ws/**", "/projects/**").permitAll()
-                        .requestMatchers("/api/users/me").authenticated()
+                                        "/*.html", "/*.css", "/*.js", "/*.ico", "/favicon.ico", "/ws/**", "/projects/**", "/api/users/me").permitAll()
                         .anyRequest().authenticated()
                 )
                 .oauth2Login(oauth2 -> oauth2
