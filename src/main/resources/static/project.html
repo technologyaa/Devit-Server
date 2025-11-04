@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>프로젝트 관리 - WebSocket Chat</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+    </style>
+</head>
+<body>
+    <div class="min-h-screen p-4">
+        <div class="max-w-6xl mx-auto">
+            <!-- 헤더 -->
+            <div class="bg-white rounded-2xl shadow-xl p-6 mb-6">
+                <div class="flex justify-between items-center">
+                    <h1 class="text-3xl font-bold text-gray-800">프로젝트 관리</h1>
+                    <div>
+                        <button onclick="openCreateModal()" class="bg-gradient-to-r from-orange-600 to-red-600 text-white px-6 py-3 rounded-lg font-semibold hover:shadow-lg transition duration-300">
+                            + 새 프로젝트
+                        </button>
+                        <a href="/" class="ml-2 text-gray-600 hover:underline">홈으로</a>
+                    </div>
+                </div>
+            </div>
+
+            <div id="resultMessage" class="mb-4"></div>
+
+            <!-- 프로젝트 리스트 -->
+            <div id="projectList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div class="bg-white rounded-xl shadow-lg p-6 animate-pulse">
+                    <div class="h-6 bg-gray-200 rounded"></div>
+                    <div class="h-4 bg-gray-200 rounded mt-4"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 모달 -->
+    <div id="modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+        <div class="bg-white rounded-2xl p-8 max-w-md w-full mx-4">
+            <h2 id="modalTitle" class="text-2xl font-bold mb-6">프로젝트 생성</h2>
+            <div id="modalMessage" class="mb-4"></div>
+            <form id="projectForm" class="space-y-4">
+                <div>
+                    <label class="block text-gray-700 font-semibold mb-2">프로젝트 이름</label>
+                    <input type="text" id="projectName" required
+                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-600 focus:border-transparent"
+                           placeholder="프로젝트 이름을 입력하세요">
+                </div>
+                <div>
+                    <label class="block text-gray-700 font-semibold mb-2">설명</label>
+                    <textarea id="projectDescription" rows="3"
+                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-600 focus:border-transparent"
+                           placeholder="프로젝트 설명을 입력하세요"></textarea>
+                </div>
+                <div>
+                    <label class="block text-gray-700 font-semibold mb-2">전공</label>
+                    <select id="major" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-600 focus:border-transparent">
+                        <option value="FRONTEND">프론트엔드</option>
+                        <option value="BACKEND">백엔드</option>
+                        <option value="WEB">웹</option>
+                        <option value="APP">앱</option>
+                        <option value="GAME">게임</option>
+                    </select>
+                </div>
+                <div class="flex gap-2">
+                    <button type="submit" class="flex-1 bg-gradient-to-r from-orange-600 to-red-600 text-white py-3 rounded-lg font-semibold hover:shadow-lg transition duration-300">
+                        저장
+                    </button>
+                    <button type="button" onclick="closeModal()" class="flex-1 bg-gray-300 text-gray-800 py-3 rounded-lg font-semibold hover:bg-gray-400 transition duration-300">
+                        취소
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let currentProjectId = null;
+
+        // 페이지 로드 시 프로젝트 목록 가져오기
+        loadProjects();
+
+        function loadProjects() {
+            fetch('/projects')
+                .then(res => res.json())
+                .then(data => {
+                    const projectList = document.getElementById('projectList');
+                    if (data.length === 0) {
+                        projectList.innerHTML = `
+                            <div class="col-span-full bg-white rounded-xl shadow-lg p-8 text-center">
+                                <p class="text-gray-600 text-lg">프로젝트가 없습니다.</p>
+                                <button onclick="openCreateModal()" class="mt-4 bg-gradient-to-r from-orange-600 to-red-600 text-white px-6 py-3 rounded-lg font-semibold">
+                                    첫 프로젝트 만들기
+                                </button>
+                            </div>
+                        `;
+                    } else {
+                        projectList.innerHTML = data.map(project => `
+                            <div class="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition duration-300">
+                                <div class="flex justify-between items-start mb-2">
+                                    <h3 class="text-xl font-bold text-gray-800">${project.title}</h3>
+                                    <div>
+                                        <button onclick="editProject(${project.projectId})" class="text-blue-600 hover:text-blue-800">✏️</button>
+                                        <button onclick="deleteProject(${project.projectId})" class="text-red-600 hover:text-red-800">🗑️</button>
+                                    </div>
+                                </div>
+                                <p class="text-gray-600 text-sm mb-2">${project.content || '설명 없음'}</p>
+                                <div class="flex items-center gap-2">
+                                    <span class="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-semibold">
+                                        ${project.major}
+                                    </span>
+                                    <span class="text-xs text-gray-500">ID: ${project.projectId}</span>
+                                </div>
+                            </div>
+                        `).join('');
+                    }
+                })
+                .catch(error => {
+                    document.getElementById('projectList').innerHTML = 
+                        '<div class="col-span-full bg-white rounded-xl shadow-lg p-8 text-center"><p class="text-red-600">프로젝트 목록을 불러올 수 없습니다.</p></div>';
+                    console.error('Error:', error);
+                });
+        }
+
+        function openCreateModal() {
+            currentProjectId = null;
+            document.getElementById('modalTitle').textContent = '프로젝트 생성';
+            document.getElementById('projectForm').reset();
+            document.getElementById('major').value = 'BACKEND'; // 기본값 설정
+            document.getElementById('modal').classList.remove('hidden');
+            document.getElementById('modal').classList.add('flex');
+        }
+
+        function editProject(id) {
+            currentProjectId = id;
+            document.getElementById('modalTitle').textContent = '프로젝트 수정';
+            document.getElementById('modal').classList.remove('hidden');
+            document.getElementById('modal').classList.add('flex');
+            
+            fetch(`/projects/${id}`)
+                .then(res => res.json())
+                .then(project => {
+                    document.getElementById('projectName').value = project.title;
+                    document.getElementById('projectDescription').value = project.content || '';
+                    document.getElementById('major').value = project.major;
+                });
+        }
+
+        function closeModal() {
+            document.getElementById('modal').classList.add('hidden');
+            document.getElementById('modal').classList.remove('flex');
+        }
+
+        async function deleteProject(id) {
+            if (!confirm('프로젝트를 삭제하시겠습니까?')) return;
+            
+            try {
+                await fetch(`/projects/${id}`, { method: 'DELETE' });
+                showMessage('프로젝트가 삭제되었습니다.', 'success');
+                loadProjects();
+            } catch (error) {
+                showMessage('삭제 실패', 'error');
+                console.error('Error:', error);
+            }
+        }
+
+        function showMessage(message, type) {
+            const div = document.getElementById('resultMessage');
+            const color = type === 'success' ? 'green' : 'red';
+            div.innerHTML = `<div class="bg-${color}-100 text-${color}-700 p-4 rounded-lg">${message}</div>`;
+            setTimeout(() => div.innerHTML = '', 3000);
+        }
+
+        document.getElementById('projectForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const data = {
+                title: document.getElementById('projectName').value,
+                content: document.getElementById('projectDescription').value,
+                major: document.getElementById('major').value
+            };
+
+            const url = currentProjectId ? `/projects/${currentProjectId}` : '/projects';
+            const method = currentProjectId ? 'PUT' : 'POST';
+
+            try {
+                const response = await fetch(url, {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                if (response.ok) {
+                    const project = await response.json();
+                    showMessage(currentProjectId ? '프로젝트가 수정되었습니다.' : '프로젝트가 생성되었습니다.', 'success');
+                    closeModal();
+                    loadProjects();
+                } else {
+                    const error = await response.text();
+                    showMessage('오류가 발생했습니다: ' + error, 'error');
+                }
+            } catch (error) {
+                showMessage('서버 연결 오류', 'error');
+                console.error('Error:', error);
+            }
+        });
+
+        // 모달 외부 클릭시 닫기
+        document.getElementById('modal').addEventListener('click', (e) => {
+            if (e.target.id === 'modal') closeModal();
+        });
+    </script>
+</body>
+</html>
+
