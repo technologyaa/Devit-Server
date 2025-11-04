@@ -2,6 +2,7 @@ package com.example.websocketchat.global.jwt;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.constraints.NotNull;
@@ -28,7 +29,31 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                     @NotNull HttpServletResponse response,
                                     @NotNull FilterChain filterChain)
             throws ServletException, IOException {
-        String token = jwtProvider.resolveToken(request);
+        
+        // OAuth 콜백 경로는 JWT 필터를 스킵
+        String requestPath = request.getRequestURI();
+        if (requestPath.startsWith("/login/oauth2/code/") || 
+            requestPath.startsWith("/oauth2/authorization/")) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+        
+        // 쿠키에서 토큰 확인
+        String token = null;
+        Cookie[] cookies = request.getCookies();
+        if (cookies != null) {
+            for (Cookie cookie : cookies) {
+                if ("accessToken".equals(cookie.getName())) {
+                    token = cookie.getValue();
+                    break;
+                }
+            }
+        }
+        
+        // Authorization 헤더에서도 확인
+        if (token == null) {
+            token = jwtProvider.resolveToken(request);
+        }
 
         if (token == null || !jwtProvider.validateToken(token)) {
             filterChain.doFilter(request, response);
