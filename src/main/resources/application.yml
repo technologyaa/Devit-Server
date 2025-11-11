@@ -14,9 +14,9 @@ spring:
             user-info-uri: https://www.googleapis.com/oauth2/v3/userinfo
 
   datasource:
-    url: jdbc:mysql://localhost:3306/oauthdb?serverTimezone=UTC&characterEncoding=UTF-8
+    url: jdbc:mysql://localhost:3306/websocket_chat_db?serverTimezone=UTC&characterEncoding=UTF-8
     username: root
-    password: ""                # 비밀번호 없으면 빈 문자열로
+    password: root1234!
     driver-class-name: com.mysql.cj.jdbc.Driver
 
   jpa:
@@ -25,4 +25,4 @@ spring:
     show-sql: true               # SQL 쿼리 로그 출력
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.MySQL8Dialect
+        dialect: org.hibernate.dialect.MySQLDialect
