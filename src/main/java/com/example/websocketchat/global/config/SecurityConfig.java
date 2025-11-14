@@ -47,7 +47,8 @@ public class SecurityConfig {
                         .requestMatchers("/login", "/", "/static/**", "/swagger-ui/**", "/v3/api-docs/**", "/login.html", "/signup.html", "/chat.html", "/project.html", "/index.html", "/auth/**", "/*.html", "/ws/**").permitAll()
                         .requestMatchers("/oauth2/**").permitAll() // OAuth 로그인 허용
                         .requestMatchers("/api/users/me").permitAll() // 로그인 상태 확인용
-                        .anyRequest().permitAll() // 임시로 모든 요청 허용 (테스트용)
+                        .requestMatchers("/api/profile/**").authenticated()
+                        //.anyRequest().permitAll() // 임시로 모든 요청 허용 (테스트용)
                 )
                 // OAuth 로그인 활성화
                 .oauth2Login(oauth2 -> oauth2

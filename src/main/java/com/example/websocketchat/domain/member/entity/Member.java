@@ -28,5 +28,9 @@ public class Member {
 
     @Enumerated(EnumType.STRING)
     private Role role;
+
+    public void UpdateMember(String username) {
+        this.username = username;
+    }
 }
 
