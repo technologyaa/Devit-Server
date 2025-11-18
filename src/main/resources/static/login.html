@@ -113,8 +113,8 @@
                 });
 
                 const data = await response.json();
-                
-                if (data.success) {
+
+                if (response.ok && data.status === 200) {
                     // JWT 토큰 및 사용자 정보 저장
                     if (data.data) {
                         localStorage.setItem('token', data.data);
