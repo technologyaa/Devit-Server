@@ -1,40 +1,42 @@
 spring:
-  application:
-    name: Devit
   datasource:
-    url: ${DB_URL}
-    username: ${DB_USERNAME}
-    password: ${DB_PASSWORD}
+    url: jdbc:mysql://localhost:3306/websocket_chat_db?serverTimezone=Asia/Seoul&useSSL=false&allowPublicKeyRetrieval=true&characterEncoding=UTF-8
+    username: devit
+    password: 새비밀번호
     driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:
-    hibernate:
-      ddl-auto: update
     properties:
       hibernate:
         format_sql: true
+        dialect: org.hibernate.dialect.MySQLDialect # 또는 org.hibernate.dialect.MySQL8Dialect
     show-sql: true
 
   jwt:
-    secret: ${JWT_SECRET}
-    access-token-expiration: ${JWT_ACCESS_TOKEN_EXPIRATION}
-    refresh-token-expiration: ${JWT_REFRESH_TOKEN_EXPIRATION}
+    # JWT 비밀 키 (보안상 매우 길게 설정하세요)
+    secret: ${JWT_SECRET:your_very_secure_and_long_secret_key_for_devit_project_over_32_characters}
+    # 토큰 만료 시간 (밀리초 단위 기본값)
+    access-token-expiration: ${JWT_ACCESS_TOKEN_EXPIRATION:3600000} # 1시간
+    refresh-token-expiration: ${JWT_REFRESH_TOKEN_EXPIRATION:604800000} # 7일
 
   mail:
-    username: ${MAIL_USERNAME}
-    password: ${MAIL_PASSWORD}
+    # 이메일 인증 관련 설정 (테스트용)
+    username: ${MAIL_USERNAME:your_email_address@gmail.com}
+    password: ${MAIL_PASSWORD:your_email_password}
 
   data:
     redis:
-      host: ${REDIS_HOST}
-      port: ${REDIS_PORT}
+      # Redis 연결 정보 (테스트용 기본값)
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
 
   security:
     oauth2:
       client:
         registration:
           google:
-            client-id: ${GOOGLE_CLIENT_ID}
-            client-secret: ${GOOGLE_CLIENT_SECRET}
+            # Google OAuth Client ID/Secret (테스트용 더미 값)
+            client-id: ${GOOGLE_CLIENT_ID:dummy-google-client-id}
+            client-secret: ${GOOGLE_CLIENT_SECRET:dummy-google-client-secret}
             scope:
               - email
               - profile
@@ -43,4 +45,5 @@ spring:
             user-info-uri: https://www.googleapis.com/oauth2/v3/userinfo
 
 server:
-  port: ${SERVER_PORT}
+  # 서버 포트 (기본값 8080)
+  port: ${SERVER_PORT:8080}
