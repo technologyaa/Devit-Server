@@ -2,6 +2,9 @@ package technologyaa.Devit.domain.project.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import technologyaa.Devit.domain.review.entity.Review;
+
+import java.util.List;
 
 @Entity
 @Getter
@@ -22,5 +25,11 @@ public class Project {
 
     @Enumerated(EnumType.STRING)
     private Major major;
+
+
+    public List<Review> getParticipants() {
+        return List.of();
+    }
+
 }
 
