@@ -2,6 +2,7 @@ package technologyaa.Devit.domain.auth.jwt.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import technologyaa.Devit.domain.developer.entity.Developer;
 
 @Entity
 @Getter
@@ -26,5 +27,8 @@ public class Member {
 
     @Enumerated(EnumType.STRING)
     private Role role;
+
+    @OneToOne(mappedBy = "member", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Developer developer;
 }
 
