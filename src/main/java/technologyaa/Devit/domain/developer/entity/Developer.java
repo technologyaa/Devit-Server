@@ -17,7 +17,7 @@ public class Developer {
     @Id
     private Long memberId;
 
-    @OneToOne
+    @OneToOne(fetch = FetchType.LAZY)
     @MapsId
     private Member member;
 
@@ -30,6 +30,7 @@ public class Developer {
     private String githubId;
 
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private Major major;
 
     @Column(length = 255)
@@ -37,4 +38,9 @@ public class Developer {
 
     @Column(precision = 4, scale = 1)
     private BigDecimal temperature;
+
+    @PrePersist
+    public void prePersist() {
+        this.temperature = new BigDecimal(30.0);
+    }
 }

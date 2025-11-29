@@ -1,11 +1,13 @@
 package technologyaa.Devit.domain.developer.dto;
 
-import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import technologyaa.Devit.domain.developer.entity.Major;
 
+import java.math.BigDecimal;
+
 @Getter
-public class DeveloperRequest {
+public class DeveloperResponse {
+    private Long memberId;
 
     private String introduction;
 
@@ -13,10 +15,9 @@ public class DeveloperRequest {
 
     private String githubId;
 
-    @NotNull
     private Major major;
 
     private String blog;
 
-
+    private BigDecimal temperature;
 }
