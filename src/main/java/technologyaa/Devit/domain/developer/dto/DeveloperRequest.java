@@ -17,6 +17,4 @@ public class DeveloperRequest {
     private Major major;
 
     private String blog;
-
-
 }

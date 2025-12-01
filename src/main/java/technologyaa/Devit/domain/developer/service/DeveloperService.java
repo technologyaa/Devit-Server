@@ -8,10 +8,14 @@ import technologyaa.Devit.domain.auth.jwt.repository.MemberRepository;
 import technologyaa.Devit.domain.developer.dto.DeveloperRequest;
 import technologyaa.Devit.domain.developer.dto.DeveloperResponse;
 import technologyaa.Devit.domain.developer.entity.Developer;
+import technologyaa.Devit.domain.developer.entity.Major;
+import technologyaa.Devit.domain.developer.exception.DeveloperNotFoundException;
 import technologyaa.Devit.domain.developer.exception.MemberNotFoundException;
 import technologyaa.Devit.domain.developer.repository.DeveloperRepository;
 
+import java.math.BigDecimal;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -22,62 +26,116 @@ public class DeveloperService {
     private final MemberRepository memberRepository;
 
     @Transactional
-    public DeveloperResponse create(Long memberId, DeveloperRequest request) {
+    public DeveloperResponse createDeveloper(Long memberId, DeveloperRequest request) {
         Member member = memberRepository.findById(memberId)
-                .orElseThrow(() -> new MemberNotFoundException("해당 멤버를 찾을 수 없습니다."));
+                .orElseThrow(() -> new MemberNotFoundException("해당 회원을 찾을 수 없습니다."));
 
         if (developerRepository.existsById(memberId)) {
-            throw new IllegalArgumentException("해당 멤버의 개발자 정보가 이미 등록되어 있습니다.");
-
-            Developer developer = Developer.builder()
-                    .memberId(memberId)
-                    .member(member)
-                    .introduction(request.getIntroduction())
-                    .career(request.getCareer())
-                    .githubId(request.getGithubId())
-                    .major(request.getMajor())
-                    .blog(request.getBlog())
-                    .temperature(request.getTemperature())
-                    .build();
-
-            return null;
+            throw new IllegalArgumentException("해당 회원은 이미 개발자로 등록 되어있습니다.");
         }
+
+        Developer developer = Developer.builder()
+                .member(member)
+                .introduction(request.getIntroduction())
+                .career(request.getCareer())
+                .githubId(request.getGithubId())
+                .major(request.getMajor())
+                .blog(request.getBlog())
+                .build();
+
+        Developer saved = developerRepository.save(developer);
+
+        return convertToResponse(saved);
     }
 
-    public List<Developer> findAll() {
-        return developerRepository.findAll();
+    public DeveloperResponse getDeveloperById(Long memberId) {
+        Developer developer = developerRepository.findById(memberId)
+                .orElseThrow(() -> new DeveloperNotFoundException("해당 개발자를 찾을 수 없습니다"));
+
+        return convertToResponse(developer);
     }
 
-    public Developer findOne(Long memberId) {
-        return developerRepository.findById(memberId)
-                .orElseThrow(() -> new IllegalArgumentException("회원 ID: " + memberId + "의 개발자 정보를 찾을 수 없습니다."));
+    public List<DeveloperResponse> getAllDevelopers() {
+        return developerRepository.findAll().stream()
+                .map(this::convertToResponse)
+                .collect(Collectors.toList());
     }
 
+    public List<DeveloperResponse> getDevelopersByMajor(Major major) {
+        return developerRepository.findByMajor(major).stream()
+                .map(this::convertToResponse)
+                .collect(Collectors.toList());
+    }
+
+    public List<DeveloperResponse> getDevelopersByCareer(Integer minCareer) {
+        return developerRepository.findByCareerGreaterThanEqual(minCareer).stream()
+                .map(this::convertToResponse)
+                .collect(Collectors.toList());
+    }
+
+    public List<DeveloperResponse> getDevelopersByTemperature(BigDecimal minTemperature) {
+        return developerRepository.findByTemperatureGreaterThanEqual(minTemperature).stream()
+                .map(this::convertToResponse)
+                .collect(Collectors.toList());
+    }
 
     @Transactional
-    public Developer update(Long memberId, DeveloperRequest request) {
-        Developer developer = findOne(memberId);
+    public DeveloperResponse updateDeveloper(Long memberId, DeveloperRequest request) {
+        Developer developer = developerRepository.findById(memberId)
+                .orElseThrow(() -> new DeveloperNotFoundException("해당 개발자를 찾을 수 없습니다"));
 
-        // 2. 변경 감지(Dirty Checking)를 위한 필드 값 변경
-        developer.update(
-                request.introduction(),
-                request.career(),
-                request.github(),
-                request.major(),
-                request.blog(),
-                request.temperature()
-        );
+        // 필드 업데이트
+        if (request.getIntroduction() != null) {
+            developer.setIntroduction(request.getIntroduction());
+        }
+        if (request.getCareer() != null) {
+            developer.setCareer(request.getCareer());
+        }
+        if (request.getGithubId() != null) {
+            developer.setGithubId(request.getGithubId());
+        }
+        if (request.getMajor() != null) {
+            developer.setMajor(request.getMajor());
+        }
+        if (request.getBlog() != null) {
+            developer.setBlog(request.getBlog());
+        }
 
-        return developer;
+        Developer updated = developerRepository.save(developer);
+
+        return convertToResponse(updated);
     }
 
     @Transactional
-    public void delete(Long memberId) {
+    public DeveloperResponse updateTemperature(Long memberId, BigDecimal temperature) {
+        Developer developer = developerRepository.findById(memberId)
+                .orElseThrow(() -> new DeveloperNotFoundException("해당 개발자를 찾을 수 없습니다"));
+
+        developer.setTemperature(temperature);
+        Developer updated = developerRepository.save(developer);
+
+        return convertToResponse(updated);
+    }
+
+    @Transactional
+    public void deleteDeveloper(Long memberId) {
         if (!developerRepository.existsById(memberId)) {
-            throw new IllegalArgumentException("회원 ID: " + memberId + "의 개발자 정보를 찾을 수 없으므로 삭제할 수 없습니다.");
+            throw new DeveloperNotFoundException("해당 개발자를 찾을 수 없습니다");
         }
+
         developerRepository.deleteById(memberId);
     }
 
+    private DeveloperResponse convertToResponse(Developer developer) {
+        DeveloperResponse response = new DeveloperResponse();
+        developer.setMemberId(response.getMemberId());
+        developer.setIntroduction(response.getIntroduction());
+        developer.setCareer(response.getCareer());
+        developer.setGithubId(response.getGithubId());
+        developer.setMajor(response.getMajor());
+        developer.setBlog(response.getBlog());
+        developer.setTemperature(response.getTemperature());
 
+        return response;
+    }
 }
