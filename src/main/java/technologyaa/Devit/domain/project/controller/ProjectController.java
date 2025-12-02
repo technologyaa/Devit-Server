@@ -3,8 +3,12 @@ package technologyaa.Devit.domain.project.controller;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import technologyaa.Devit.domain.project.dto.ProjectCreateRequest;
+import technologyaa.Devit.domain.project.dto.ProjectResponse;
+import technologyaa.Devit.domain.project.dto.ProjectUpdateRequest;
 import technologyaa.Devit.domain.project.entity.Project;
 import technologyaa.Devit.domain.project.service.ProjectService;
 
@@ -12,39 +16,49 @@ import java.util.List;
 
 @Tag(name = "프로젝트 (Project)", description = "프로젝트 CRUD API")
 @RestController
-@RequiredArgsConstructor
 @RequestMapping("/projects")
+@RequiredArgsConstructor
 public class ProjectController {
+
     private final ProjectService projectService;
 
-    @Operation(summary = "프로젝트 생성", description = "새로운 프로젝트를 생성합니다.")
+    // 생성
     @PostMapping
-    public Project create(@RequestBody ProjectCreateRequest projectRequest) {
-        return projectService.create(projectRequest);
+    public ResponseEntity<Long> createProject(@RequestBody ProjectCreateRequest request,
+                                              @RequestParam("memberId") Long authorId) {
+        Long projectId = projectService.createProject(request, authorId);
+        return ResponseEntity.status(HttpStatus.CREATED).body(projectId);
     }
 
-    @Operation(summary = "프로젝트 전체 조회", description = "모든 프로젝트를 조회합니다.")
+    // 전체 조회
     @GetMapping
-    public List<Project> findAll() {
-        return projectService.findAll();
+    public ResponseEntity<List<ProjectResponse>> getAllProjects() {
+        List<ProjectResponse> projects = projectService.findAllProjects();
+        return ResponseEntity.ok(projects);
     }
 
-    @Operation(summary = "프로젝트 단일 조회", description = "특정 프로젝트를 조회합니다.")
-    @GetMapping("/{projectId}")
-    public Project findOne(@PathVariable Long projectId) {
-        return projectService.findOne(projectId);
+    // 조회 (하나)
+    @GetMapping("/{id}")
+    public ResponseEntity<ProjectResponse> getProjectById(@PathVariable Long id) {
+        ProjectResponse project = projectService.findProjectById(id);
+        return ResponseEntity.ok(project);
     }
 
-    @Operation(summary = "프로젝트 수정", description = "특정 프로젝트를 수정합니다.")
+    // 수정
     @PutMapping("/{projectId}")
-    public Project update(@PathVariable Long projectId, @RequestBody ProjectCreateRequest projectRequest) {
-        return projectService.update(projectId, projectRequest);
+    public ResponseEntity<String> updateProject(@PathVariable Long projectId,
+                                                @RequestBody ProjectUpdateRequest request,
+                                                @RequestParam("memberId") Long memberId) {
+        String responseMessage = projectService.updateProject(projectId, request, memberId);
+        return ResponseEntity.ok(responseMessage);
     }
 
-    @Operation(summary = "프로젝트 삭제", description = "특정 프로젝트를 삭제합니다.")
+    // 삭제
     @DeleteMapping("/{projectId}")
-    public void delete(@PathVariable Long projectId) {
-        projectService.delete(projectId);
+    public ResponseEntity<Void> deleteProject(@PathVariable Long projectId,
+                                              @RequestParam("memberId") Long memberId) {
+        projectService.deleteProject(projectId, memberId);
+        return ResponseEntity.noContent().build();
     }
 }
 

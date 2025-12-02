@@ -2,13 +2,11 @@ package technologyaa.Devit.domain.project.dto;
 
 import lombok.Builder;
 import lombok.Getter;
-import technologyaa.Devit.domain.auth.jwt.entity.Member;
 import technologyaa.Devit.domain.project.entity.Project;
 
 import java.time.LocalDateTime;
 
 @Getter
-@Builder
 public class ProjectResponse {
     private Long projectId;
     private Long authorId;

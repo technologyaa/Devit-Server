@@ -28,6 +28,7 @@ public class Project {
     @Column(columnDefinition = "TEXT")
     private String content;
 
+    @Builder.Default
     @Column(nullable = false)
     private Boolean isCompleted=false;
 
