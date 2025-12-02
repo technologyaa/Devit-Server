@@ -4,7 +4,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
-import technologyaa.Devit.domain.project.dto.ProjectRequest;
+import technologyaa.Devit.domain.project.dto.ProjectCreateRequest;
 import technologyaa.Devit.domain.project.entity.Project;
 import technologyaa.Devit.domain.project.service.ProjectService;
 
@@ -19,7 +19,7 @@ public class ProjectController {
 
     @Operation(summary = "프로젝트 생성", description = "새로운 프로젝트를 생성합니다.")
     @PostMapping
-    public Project create(@RequestBody ProjectRequest projectRequest) {
+    public Project create(@RequestBody ProjectCreateRequest projectRequest) {
         return projectService.create(projectRequest);
     }
 
@@ -37,7 +37,7 @@ public class ProjectController {
 
     @Operation(summary = "프로젝트 수정", description = "특정 프로젝트를 수정합니다.")
     @PutMapping("/{projectId}")
-    public Project update(@PathVariable Long projectId, @RequestBody ProjectRequest projectRequest) {
+    public Project update(@PathVariable Long projectId, @RequestBody ProjectCreateRequest projectRequest) {
         return projectService.update(projectId, projectRequest);
     }
 
