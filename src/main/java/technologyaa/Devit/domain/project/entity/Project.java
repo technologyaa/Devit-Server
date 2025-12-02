@@ -1,17 +1,11 @@
 package technologyaa.Devit.domain.project.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import jakarta.persistence.*;
+import lombok.*;
+import technologyaa.Devit.domain.auth.jwt.entity.Member;
+
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Getter
@@ -33,5 +27,8 @@ public class Project {
 
     @Enumerated(EnumType.STRING)
     private Major major;
+
+    @Column(length = 500)
+    private String profile;
 }
 
