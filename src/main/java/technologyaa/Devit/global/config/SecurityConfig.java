@@ -49,9 +49,13 @@ public class SecurityConfig {
                                 .requestMatchers("/oauth2/**").permitAll() // OAuth 로그인 허용
                                 .requestMatchers("/api/users/me").permitAll() // 로그인 상태 확인용
                                 .requestMatchers("/projects/**").permitAll() // 프로젝트 API 접근 허용
+                                .requestMatchers("/uploads/**").permitAll() // 업로드된 파일 접근 허용
                                 .requestMatchers("/api/profile/**").authenticated()
+                                .requestMatchers("/auth/profile/**").authenticated()
+                                .requestMatchers("/projects/profile/**").authenticated()
                         //.anyRequest().permitAll() // 임시로 모든 요청 허용 (테스트용)
                 )
+                .formLogin(AbstractHttpConfigurer::disable)
                 // OAuth 로그인 활성화
                 .oauth2Login(oauth2 -> oauth2
                         .userInfoEndpoint(userInfo -> userInfo
