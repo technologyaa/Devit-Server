@@ -13,9 +13,6 @@ import technologyaa.Devit.domain.common.ErrorResponse;
 
 import java.io.IOException;
 
-/**
- * Spring Security에서 인증되지 않은 사용자가 인증이 필요한 리소스에 접근할 때 호출되는 핸들러
- */
 @Slf4j
 @Component
 public class CustomAuthenticationEntryPoint implements AuthenticationEntryPoint {

@@ -21,9 +21,6 @@ import java.util.Map;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    /**
-     * 인증/인가 관련 예외 처리
-     */
     @ExceptionHandler(AuthException.class)
     public ResponseEntity<APIResponse<ErrorResponse>> handleAuthException(AuthException e) {
         log.error("AuthException: {}", e.getMessage());
@@ -38,9 +35,6 @@ public class GlobalExceptionHandler {
                 .body(new APIResponse<>(e.getAuthErrorCode().getStatus(), errorResponse));
     }
 
-    /**
-     * 프로젝트 관련 예외 처리
-     */
     @ExceptionHandler(ProjectException.class)
     public ResponseEntity<APIResponse<ErrorResponse>> handleProjectException(ProjectException e) {
         log.error("ProjectException: {}", e.getMessage());
@@ -83,9 +77,6 @@ public class GlobalExceptionHandler {
                 .body(new APIResponse<>(HttpStatus.NOT_FOUND.value(), errorResponse));
     }
 
-    /**
-     * Validation 예외 처리 (400)
-     */
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<APIResponse<Map<String, String>>> handleValidationException(MethodArgumentNotValidException e) {
         log.error("MethodArgumentNotValidException: {}", e.getMessage());
@@ -102,9 +93,6 @@ public class GlobalExceptionHandler {
                 .body(new APIResponse<>(HttpStatus.BAD_REQUEST.value(), errors));
     }
 
-    /**
-     * 기타 모든 예외 처리 (500)
-     */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<APIResponse<ErrorResponse>> handleException(Exception e) {
         log.error("Unexpected error occurred: ", e);
