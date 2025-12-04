@@ -17,6 +17,7 @@ import org.springframework.web.filter.CorsFilter;
 import technologyaa.Devit.domain.auth.oauth.handler.OAuth2FailureHandler;
 import technologyaa.Devit.domain.auth.oauth.handler.OAuth2SuccessHandler;
 import technologyaa.Devit.domain.auth.oauth.service.CustomOAuth2UserService;
+import technologyaa.Devit.global.exception.CustomAuthenticationEntryPoint;
 import technologyaa.Devit.global.jwt.JwtAuthenticationFilter;
 
 
@@ -29,6 +30,7 @@ public class SecurityConfig {
     private final CustomOAuth2UserService customOAuth2UserService;
     private final OAuth2SuccessHandler oAuth2SuccessHandler;
     private final OAuth2FailureHandler oAuth2FailureHandler;
+    private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
 
     @Bean
     public BCryptPasswordEncoder bCryptPasswordEncoder() {
@@ -71,6 +73,9 @@ public class SecurityConfig {
                         .deleteCookies("JSESSIONID")
                 )
                 .headers(headers -> headers.frameOptions(HeadersConfigurer.FrameOptionsConfig::sameOrigin))
+                .exceptionHandling(exception -> exception
+                        .authenticationEntryPoint(customAuthenticationEntryPoint)
+                )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
