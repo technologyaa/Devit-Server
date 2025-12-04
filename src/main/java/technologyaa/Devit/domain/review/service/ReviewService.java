@@ -82,6 +82,7 @@ public class ReviewService {
                 .orElseThrow(() -> new IllegalStateException(message));
     }
 
+
     private void validateReview(User reviewer, User reviewee, Project project, int rating) {
         if (rating < 0 || rating > 5) {
             throw new IllegalArgumentException("평점은 0점에서 5점 사이여야 합니다.");
