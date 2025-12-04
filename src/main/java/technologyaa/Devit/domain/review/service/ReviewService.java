@@ -27,10 +27,11 @@ public class ReviewService {
     @Transactional
     public ReviewResponse createReview(ReviewCreateRequest request) {
 
-        User reviewer = getUserOrThrow(request.getReviewerId(), "Reviewer not found");
-        User reviewee = getUserOrThrow(request.getRevieweeId(), "Reviewee not found");
+        // 1. 에러 메시지 한국어 변경
+        User reviewer = getUserOrThrow(request.getReviewerId(), "평가자를 찾을 수 없습니다.");
+        User reviewee = getUserOrThrow(request.getRevieweeId(), "평가 대상을 찾을 수 없습니다.");
         Project project = projectRepository.findById(request.getProjectId())
-                .orElseThrow(() -> new IllegalStateException("Project not found"));
+                .orElseThrow(() -> new IllegalStateException("프로젝트를 찾을 수 없습니다."));
 
         validateReview(reviewer, reviewee, project, request.getRating());
 
@@ -58,7 +59,7 @@ public class ReviewService {
 
     @Transactional
     public AverageRatingResponse getAverageRating(Long userId) {
-        User user = getUserOrThrow(userId, "User not found");
+        User user = getUserOrThrow(userId, "사용자를 찾을 수 없습니다.");
 
         List<Review> reviews = reviewRepository.findByReviewee(user);
 
@@ -67,9 +68,12 @@ public class ReviewService {
                 .average()
                 .orElse(0.0);
 
+        // 소수점 첫째 자리까지 반올림
+        double roundedAverage = Math.round(average * 10.0) / 10.0;
+
         return AverageRatingResponse.builder()
                 .userId(userId)
-                .averageRating(average)
+                .averageRating(roundedAverage)
                 .build();
     }
 
@@ -79,20 +83,20 @@ public class ReviewService {
     }
 
     private void validateReview(User reviewer, User reviewee, Project project, int rating) {
-        if (rating < 0 || rating > 100) {
-            throw new IllegalArgumentException("Rating must be between 0 and 100");
+        if (rating < 0 || rating > 5) {
+            throw new IllegalArgumentException("평점은 0점에서 5점 사이여야 합니다.");
         }
 
         if (!project.getParticipants().contains(reviewer)) {
-            throw new IllegalStateException("Reviewer is not a participant of the project");
+            throw new IllegalStateException("프로젝트 참여자가 아닙니다.");
         }
 
         if (!project.getParticipants().contains(reviewee)) {
-            throw new IllegalStateException("Reviewee is not a participant of the project");
+            throw new IllegalStateException("프로젝트 참여자가 아닙니다.");
         }
 
         if (reviewRepository.existsByReviewerAndRevieweeAndProject(reviewer, reviewee, project)) {
-            throw new IllegalStateException("Already reviewed this user for this project.");
+            throw new IllegalStateException("해당 프로젝트에 대해 이미 평가한 사용자입니다.");
         }
     }
 }
