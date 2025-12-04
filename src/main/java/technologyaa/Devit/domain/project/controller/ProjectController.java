@@ -9,9 +9,11 @@ import org.springframework.web.bind.annotation.*;
 import technologyaa.Devit.domain.project.dto.ProjectCreateRequest;
 import technologyaa.Devit.domain.project.dto.ProjectResponse;
 import technologyaa.Devit.domain.project.dto.ProjectUpdateRequest;
-import technologyaa.Devit.domain.project.entity.Project;
+import org.springframework.web.multipart.MultipartFile;
+import technologyaa.Devit.domain.common.APIResponse;
 import technologyaa.Devit.domain.project.service.ProjectService;
 
+import java.io.IOException;
 import java.util.List;
 
 @Tag(name = "프로젝트 (Project)", description = "프로젝트 CRUD API")
@@ -59,6 +61,12 @@ public class ProjectController {
                                               @RequestParam("memberId") Long memberId) {
         projectService.deleteProject(projectId, memberId);
         return ResponseEntity.noContent().build();
+    }
+
+    @Operation(summary = "프로젝트 프로필 사진 변경", description = "프로젝트의 프로필 사진을 변경합니다.")
+    @PutMapping("/profile/image/{id}")
+    public APIResponse<?> uploadProfileImage(@PathVariable Long id,@PathVariable("file")MultipartFile file) throws IOException {
+        return projectService.uploadProjectsImage(id, file);
     }
 }
 

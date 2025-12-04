@@ -6,6 +6,10 @@ import org.hibernate.annotations.CreationTimestamp;
 import technologyaa.Devit.domain.auth.jwt.entity.Member;
 
 import java.time.LocalDateTime;
+import technologyaa.Devit.domain.auth.jwt.entity.Member;
+
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Getter
@@ -36,4 +40,3 @@ public class Project {
     @Column(nullable = false, updatable = false)
     private LocalDateTime createAt = LocalDateTime.now();
 }
-

@@ -8,9 +8,15 @@ import technologyaa.Devit.domain.auth.jwt.repository.MemberRepository;
 import technologyaa.Devit.domain.project.dto.ProjectCreateRequest;
 import technologyaa.Devit.domain.project.dto.ProjectResponse;
 import technologyaa.Devit.domain.project.dto.ProjectUpdateRequest;
+import org.springframework.web.multipart.MultipartFile;
+import technologyaa.Devit.domain.common.APIResponse;
+import technologyaa.Devit.domain.file.service.FileStorageService;
 import technologyaa.Devit.domain.project.entity.Project;
+import technologyaa.Devit.domain.project.exception.ProjectErrorCode;
+import technologyaa.Devit.domain.project.exception.ProjectException;
 import technologyaa.Devit.domain.project.repository.ProjectRepository;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -20,6 +26,7 @@ public class ProjectService {
 
     private final ProjectRepository projectRepository;
     private final MemberRepository memberRepository;
+    private final FileStorageService fileStorageService;
 
     // create
     @Transactional
@@ -83,6 +90,24 @@ public class ProjectService {
 
 
         projectRepository.delete(project);
+    }
+
+    public APIResponse<?> uploadProjectsImage(Long id,MultipartFile file) throws IOException {
+        Project project = projectRepository.findById(id)
+                .orElseThrow(() -> new ProjectException(ProjectErrorCode.PROJECT_NOT_FOUND));
+
+        if(project.getProfile() != null) {
+            fileStorageService.deleteFile(project.getProfile());
+        }
+
+        try {
+            String imagePath = fileStorageService.storeProjectFile(file);
+            project.setProfile(imagePath);
+            projectRepository.save(project);
+            return APIResponse.ok(imagePath);
+        } catch (IOException e) {
+            throw new RuntimeException("이미지 업로드 실패: " + e.getMessage());
+        }
     }
 }
 
