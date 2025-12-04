@@ -12,6 +12,8 @@ import org.springframework.web.multipart.MultipartFile;
 import technologyaa.Devit.domain.common.APIResponse;
 import technologyaa.Devit.domain.file.service.FileStorageService;
 import technologyaa.Devit.domain.project.entity.Project;
+import technologyaa.Devit.domain.project.exception.AuthorErrorCode;
+import technologyaa.Devit.domain.project.exception.AuthorException;
 import technologyaa.Devit.domain.project.exception.ProjectErrorCode;
 import technologyaa.Devit.domain.project.exception.ProjectException;
 import technologyaa.Devit.domain.project.repository.ProjectRepository;
@@ -28,17 +30,22 @@ public class ProjectService {
     private final MemberRepository memberRepository;
     private final FileStorageService fileStorageService;
 
+    private void checkProjectAuthor(Project project, Long memberId) {
+        if (!project.getAuthor().getId().equals(memberId)) {
+            throw new SecurityException("접근 권한이 없습니다.");
+        }
+    }
+
     // create
     @Transactional
     public Long createProject(ProjectCreateRequest request, Long authorId) {
         Member author = memberRepository.findById(authorId)
-                .orElseThrow(() -> new IllegalArgumentException("해당 작성자를 찾을 수 없습니다"));
+                .orElseThrow(() -> new AuthorException(AuthorErrorCode.AUTHOR_NOT_FOUND));
 
         Project project = Project.builder()
                 .title(request.getTitle())
                 .content(request.getContent())
                 .author(author)
-                .isCompleted(false)
                 .build();
 
         Project savedProject = projectRepository.save(project);
@@ -57,7 +64,7 @@ public class ProjectService {
     @Transactional(readOnly = true)
     public ProjectResponse findProjectById(Long id) {
         Project project = projectRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("해당 프로젝트를 찾을 수 없습니다."));
+                .orElseThrow(() -> new ProjectException(ProjectErrorCode.PROJECT_NOT_FOUND));
         return new ProjectResponse(project);
     }
 
@@ -65,11 +72,10 @@ public class ProjectService {
     @Transactional
     public String updateProject(Long projectId, ProjectUpdateRequest request, Long memberId) {
         Project project = projectRepository.findById(projectId)
-                .orElseThrow(() -> new IllegalArgumentException("해당 프로젝트를 찾을 수 없습니다."));
+                .orElseThrow(() -> new ProjectException(ProjectErrorCode.PROJECT_NOT_FOUND));
 
-        if (!project.getAuthor().getId().equals(memberId)) {
-            throw new SecurityException("접근 권한이 없습니다.");
-        }
+        checkProjectAuthor(project, memberId);
+
         project.setTitle(request.getTitle());
         project.setContent(request.getContent());
         project.setIsCompleted(request.getIsCompleted());
@@ -81,13 +87,9 @@ public class ProjectService {
     @Transactional
     public void deleteProject(Long projectId, Long memberId) {
         Project project = projectRepository.findById(projectId)
-                .orElseThrow(() -> new IllegalArgumentException("해당 프로젝트를 찾을 수 없습니다."));
+                .orElseThrow(() -> new ProjectException(ProjectErrorCode.PROJECT_NOT_FOUND));
 
-        // **권한 확인 로직**
-        if (!project.getAuthor().getId().equals(memberId)) {
-            throw new SecurityException("접근 권한이 없습니다.");
-        }
-
+        checkProjectAuthor(project, memberId);
 
         projectRepository.delete(project);
     }
