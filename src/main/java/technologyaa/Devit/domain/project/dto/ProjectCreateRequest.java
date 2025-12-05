@@ -1,16 +1,17 @@
 package technologyaa.Devit.domain.project.dto;
 
+import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import technologyaa.Devit.domain.project.entity.Major;
 
 @Getter
 @Setter
 @NoArgsConstructor
-public class ProjectRequest {
+public class ProjectCreateRequest {
+    @NotNull
     private String title;
+
     private String content;
-    private Major major;
 }
 
