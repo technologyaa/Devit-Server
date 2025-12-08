@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.multipart.MultipartFile;
 import technologyaa.Devit.domain.auth.jwt.dto.SignInRequest;
+import technologyaa.Devit.domain.auth.jwt.dto.SignOutRequest;
 import technologyaa.Devit.domain.auth.jwt.dto.SignUpRequest;
 import technologyaa.Devit.domain.auth.jwt.entity.Member;
 import technologyaa.Devit.domain.auth.jwt.exception.AuthErrorCode;
@@ -83,6 +84,13 @@ public class MemberService {
         } catch (IOException e) {
             throw new RuntimeException("이미지 업로드 실패: " + e.getMessage());
         }
+    }
+
+    public boolean checkUsername(SignOutRequest request) {
+        if(memberRepository.existsByUsername(request.username())) {
+            throw new AuthException(AuthErrorCode.MEMBER_ALREADY_EXISTS);
+        }
+        return true;
     }
 }
 

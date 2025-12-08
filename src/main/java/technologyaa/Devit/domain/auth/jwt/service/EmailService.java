@@ -10,6 +10,7 @@ import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 import technologyaa.Devit.domain.auth.jwt.exception.AuthErrorCode;
 import technologyaa.Devit.domain.auth.jwt.exception.AuthException;
+import technologyaa.Devit.domain.auth.jwt.repository.MemberRepository;
 import technologyaa.Devit.domain.common.APIResponse;
 import technologyaa.Devit.global.config.RedisConfig;
 
@@ -25,6 +26,7 @@ public class EmailService {
     private final JavaMailSender javaMailSender;
     private final RedisConfig redisConfig;
     private int authNume;
+    private final MemberRepository memberRepository;
 
     @Value("${spring.mail.username}")
     private String serviceName;
@@ -53,6 +55,9 @@ public class EmailService {
     }
 
     public String joinEmail(String email) {
+        if (!memberRepository.existsByEmail(email)) {
+            throw new AuthException(AuthErrorCode.EMAIL_ALREADY_EXISTS);
+        }
         makeRandomNumber();
         String customerMail = email;
         String title = "회원가입을 위한 인증코드입니다.";
