@@ -1,23 +1,21 @@
 package technologyaa.Devit.domain.auth.jwt.service;
 
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.multipart.MultipartFile;
-import technologyaa.Devit.domain.auth.jwt.dto.SignInRequest;
-import technologyaa.Devit.domain.auth.jwt.dto.SignOutRequest;
-import technologyaa.Devit.domain.auth.jwt.dto.SignUpRequest;
+import technologyaa.Devit.domain.auth.jwt.dto.request.*;
+import technologyaa.Devit.domain.auth.jwt.dto.response.SignInResponse;
 import technologyaa.Devit.domain.auth.jwt.entity.Member;
 import technologyaa.Devit.domain.auth.jwt.exception.AuthErrorCode;
 import technologyaa.Devit.domain.auth.jwt.exception.AuthException;
 import technologyaa.Devit.domain.auth.jwt.repository.MemberRepository;
 import technologyaa.Devit.domain.common.APIResponse;
 import technologyaa.Devit.domain.file.service.FileStorageService;
-import technologyaa.Devit.global.jwt.JwtProvider;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -30,8 +28,8 @@ public class MemberService {
 
     private final MemberRepository memberRepository;
     private final BCryptPasswordEncoder passwordEncoder;
-    private final JwtProvider jwtProvider;
     private final FileStorageService fileStorageService;
+    private final TokenUseCase tokenUseCase;
 
     public APIResponse<String> signUp(SignUpRequest request) {
         if (memberRepository.existsByUsername(request.username())) {
@@ -54,15 +52,27 @@ public class MemberService {
     }
 
 
-    public APIResponse<?> signIn(SignInRequest request) {
+    public APIResponse<SignInResponse> signIn(SignInRequest request, HttpServletResponse response) {
         Member member = memberRepository.findByUsername(request.username())
                 .orElseThrow(() -> new AuthException(AuthErrorCode.MEMBER_NOT_FOUND));
         if (!passwordEncoder.matches(request.password(), member.getPassword())) {
             throw new AuthException(AuthErrorCode.INVALID_CREDENTIALS);
         }
-        String token = jwtProvider.createAccessToken(member.getUsername(), member.getRole());
 
-        return APIResponse.ok(token);
+        GenerateTokenRequest generateTokenRequest = new GenerateTokenRequest(
+                member.getUsername(),
+                member.getRole()
+        );
+
+        String accessToken = tokenUseCase.generateAccessToken(generateTokenRequest, response);
+        String refreshToken = tokenUseCase.generateRefreshToken(generateTokenRequest, response);
+
+        return APIResponse.ok(new SignInResponse(accessToken,refreshToken));
+    }
+
+    public APIResponse<String> signOut(SignOutRequest request, HttpServletResponse response) {
+        tokenUseCase.deleteToken(request, response);
+        return APIResponse.ok("로그아웃 되었습니다.");
     }
 
     public APIResponse<?> uploadProfileImage(MultipartFile file) {
@@ -91,6 +101,10 @@ public class MemberService {
             throw new AuthException(AuthErrorCode.MEMBER_ALREADY_EXISTS);
         }
         return true;
+    }
+
+    public APIResponse<String> reGenerateAccessToken(ReGenerateTokenRequest request, HttpServletResponse response) {
+        return tokenUseCase.reGenerateAccessToken(request, response);
     }
 }
 
