@@ -6,9 +6,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.stereotype.Service;
-import technologyaa.Devit.domain.auth.jwt.dto.GenerateTokenRequest;
-import technologyaa.Devit.domain.auth.jwt.dto.ReGenerateTokenRequest;
-import technologyaa.Devit.domain.auth.jwt.dto.SignOutRequest;
+import technologyaa.Devit.domain.auth.jwt.dto.request.GenerateTokenRequest;
+import technologyaa.Devit.domain.auth.jwt.dto.request.ReGenerateTokenRequest;
+import technologyaa.Devit.domain.auth.jwt.dto.request.SignOutRequest;
 import technologyaa.Devit.domain.auth.jwt.entity.Member;
 import technologyaa.Devit.domain.auth.jwt.exception.AuthErrorCode;
 import technologyaa.Devit.domain.auth.jwt.exception.AuthException;
@@ -33,7 +33,7 @@ public class TokenUseCase {
 
         Cookie cookie = new Cookie("accessToken", accessToken);
         cookie.setPath("/");
-        cookie.setHttpOnly(false);
+        cookie.setHttpOnly(true);
         cookie.setMaxAge(86400);
         response.addCookie(cookie);
 
@@ -53,19 +53,34 @@ public class TokenUseCase {
         return refreshToken;
     }
 
-    public boolean isTokenValid(ReGenerateTokenRequest request) {
+    public boolean isTokenValid(String refreshToken, String username) {
+        if (!jwtProvider.validateToken(refreshToken)) {
+            return false;
+        }
+
+        String tokenUsername = jwtProvider.getUsernameFromToken(refreshToken);
+        if (!tokenUsername.equals(username)) {
+            return false;
+        }
+
         ValueOperations<String, String> valueOperations = redisConfig.redisTemplate().opsForValue();
-        String clientRefreshToken = request.refreshToken();
-        String savedRefreshToken = valueOperations.get("refreshToken:" + request.username());
+        String savedRefreshToken = valueOperations.get("refreshToken:" + username);
         if (savedRefreshToken != null && !savedRefreshToken.isEmpty()) {
-            return clientRefreshToken.equals(savedRefreshToken);
+            return refreshToken.equals(savedRefreshToken);
         }
         return false;
     }
 
     public APIResponse<String> reGenerateAccessToken(ReGenerateTokenRequest request, HttpServletResponse response) {
-        if (isTokenValid(request)) {
-            Member member = memberRepository.findByUsername(request.username())
+        String refreshToken = request.refreshToken();
+
+        if (!jwtProvider.validateToken(refreshToken)) {
+            throw new AuthException(AuthErrorCode.INVALID_TOKEN);
+        }
+        String username = jwtProvider.getUsernameFromToken(refreshToken);
+
+        if (isTokenValid(refreshToken, username)) {
+            Member member = memberRepository.findByUsername(username)
                     .orElseThrow(() -> new AuthException(AuthErrorCode.MEMBER_NOT_FOUND));
             GenerateTokenRequest generateTokenRequest = new GenerateTokenRequest(
                     member.getUsername(),
@@ -77,7 +92,7 @@ public class TokenUseCase {
         throw new AuthException(AuthErrorCode.INVALID_TOKEN);
     }
 
-    public void deleteToken(SignOutRequest request) {
+    public void deleteToken(SignOutRequest request, HttpServletResponse response) {
         ValueOperations<String, String> valueOperations = redisConfig.redisTemplate().opsForValue();
         String savedAccessToken = valueOperations.get("accessToken:" + request.username());
         String savedRefreshToken = valueOperations.get("refreshToken:" + request.username());
@@ -86,6 +101,18 @@ public class TokenUseCase {
         }
         redisConfig.redisTemplate().delete("accessToken:" + request.username());
         redisConfig.redisTemplate().delete("refreshToken:" + request.username());
+
+        Cookie accessTokenCookie = new Cookie("accessToken", null);
+        accessTokenCookie.setPath("/");
+        accessTokenCookie.setHttpOnly(false);
+        accessTokenCookie.setMaxAge(0);
+        response.addCookie(accessTokenCookie);
+
+        Cookie refreshTokenCookie = new Cookie("refreshToken", null);
+        refreshTokenCookie.setPath("/");
+        refreshTokenCookie.setHttpOnly(true);
+        refreshTokenCookie.setMaxAge(0);
+        response.addCookie(refreshTokenCookie);
     }
 }
 
