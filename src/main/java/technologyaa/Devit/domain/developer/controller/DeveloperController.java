@@ -73,9 +73,8 @@ public class DeveloperController {
 
     // delete
     @DeleteMapping("/{memberId}")
-    public ResponseEntity<Void> deleteDeveloper(@PathVariable Long memberId) {
+    public void deleteDeveloper(@PathVariable Long memberId) {
         developerService.deleteDeveloper(memberId);
-        return ResponseEntity.noContent().build();
     }
 
 }

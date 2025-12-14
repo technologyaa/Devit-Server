@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import technologyaa.Devit.domain.auth.jwt.entity.Member;
+import technologyaa.Devit.domain.auth.jwt.entity.Role;
 import technologyaa.Devit.domain.auth.jwt.repository.MemberRepository;
 import technologyaa.Devit.domain.developer.dto.DeveloperRequest;
 import technologyaa.Devit.domain.developer.dto.DeveloperResponse;
@@ -84,23 +85,6 @@ public class DeveloperService {
         Developer developer = developerRepository.findById(memberId)
                 .orElseThrow(() -> new DeveloperNotFoundException("해당 개발자를 찾을 수 없습니다"));
 
-        // 필드 업데이트
-        if (request.getIntroduction() != null) {
-            developer.setIntroduction(request.getIntroduction());
-        }
-        if (request.getCareer() != null) {
-            developer.setCareer(request.getCareer());
-        }
-        if (request.getGithubId() != null) {
-            developer.setGithubId(request.getGithubId());
-        }
-        if (request.getMajor() != null) {
-            developer.setMajor(request.getMajor());
-        }
-        if (request.getBlog() != null) {
-            developer.setBlog(request.getBlog());
-        }
-
         Developer updated = developerRepository.save(developer);
 
         return convertToResponse(updated);
@@ -127,15 +111,14 @@ public class DeveloperService {
     }
 
     private DeveloperResponse convertToResponse(Developer developer) {
-        DeveloperResponse response = new DeveloperResponse();
-        developer.setMemberId(response.getMemberId());
-        developer.setIntroduction(response.getIntroduction());
-        developer.setCareer(response.getCareer());
-        developer.setGithubId(response.getGithubId());
-        developer.setMajor(response.getMajor());
-        developer.setBlog(response.getBlog());
-        developer.setTemperature(response.getTemperature());
-
-        return response;
+        return DeveloperResponse.builder()
+                .memberId(developer.getMemberId())
+                .introduction(developer.getIntroduction())
+                .career(developer.getCareer())
+                .githubId(developer.getGithubId())
+                .major(developer.getMajor())
+                .blog(developer.getBlog())
+                .temperature(developer.getTemperature())
+                .build();
     }
 }

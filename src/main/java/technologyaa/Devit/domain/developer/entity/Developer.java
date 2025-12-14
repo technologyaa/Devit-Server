@@ -41,6 +41,6 @@ public class Developer {
 
     @PrePersist
     public void prePersist() {
-        this.temperature = new BigDecimal(30.0);
+        this.temperature = new BigDecimal(36.5);
     }
 }
