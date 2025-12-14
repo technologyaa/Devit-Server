@@ -55,7 +55,7 @@ public class EmailService {
     }
 
     public String joinEmail(String email) {
-        if (!memberRepository.existsByEmail(email)) {
+        if (memberRepository.existsByEmail(email)) {
             throw new AuthException(AuthErrorCode.EMAIL_ALREADY_EXISTS);
         }
         makeRandomNumber();
