@@ -85,6 +85,12 @@ public class DeveloperService {
         Developer developer = developerRepository.findById(memberId)
                 .orElseThrow(() -> new DeveloperNotFoundException("해당 개발자를 찾을 수 없습니다"));
 
+        developer.setIntroduction(request.getIntroduction());
+        developer.setCareer(request.getCareer());
+        developer.setGithubId(request.getGithubId());
+        developer.setMajor(request.getMajor());
+        developer.setBlog(request.getBlog());
+
         Developer updated = developerRepository.save(developer);
 
         return convertToResponse(updated);
