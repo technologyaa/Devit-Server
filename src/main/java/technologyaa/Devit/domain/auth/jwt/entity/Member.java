@@ -2,10 +2,6 @@ package technologyaa.Devit.domain.auth.jwt.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-import technologyaa.Devit.domain.project.entity.Project;
-
-import java.util.HashSet;
-import java.util.Set;
 
 @Entity
 @Getter
