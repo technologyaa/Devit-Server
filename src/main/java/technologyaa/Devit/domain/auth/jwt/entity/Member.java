@@ -2,7 +2,6 @@ package technologyaa.Devit.domain.auth.jwt.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-import technologyaa.Devit.domain.developer.entity.Developer;
 
 @Entity
 @Getter
@@ -27,5 +26,10 @@ public class Member {
 
     @Enumerated(EnumType.STRING)
     private Role role;
+
+    private boolean isDeveloper;
+
+    @Column(length = 500)
+    private String profile;
 }
 

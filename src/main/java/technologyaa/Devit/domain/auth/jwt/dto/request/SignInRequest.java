@@ -1,4 +1,4 @@
-package technologyaa.Devit.domain.auth.jwt.dto;
+package technologyaa.Devit.domain.auth.jwt.dto.request;
 
 import jakarta.validation.constraints.NotNull;
 

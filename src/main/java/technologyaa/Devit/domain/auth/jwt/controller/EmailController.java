@@ -5,7 +5,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import technologyaa.Devit.domain.auth.jwt.dto.EmailRequest;
+import technologyaa.Devit.domain.auth.jwt.dto.request.EmailRequest;
 import technologyaa.Devit.domain.auth.jwt.service.EmailService;
 import technologyaa.Devit.domain.common.APIResponse;
 

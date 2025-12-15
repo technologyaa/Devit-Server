@@ -1,4 +1,4 @@
-package technologyaa.Devit.domain.auth.jwt.dto;
+package technologyaa.Devit.domain.auth.jwt.dto.request;
 
 public record EmailRequest(
         String email,
