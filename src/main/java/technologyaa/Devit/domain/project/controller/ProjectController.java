@@ -60,18 +60,17 @@ public class ProjectController {
     public ResponseEntity<String> updateProject(@Parameter(description = "프로젝트 ID", required = true, example = "1")
                                                 @PathVariable Long projectId,
                                                 @RequestBody ProjectUpdateRequest request,
-                                                @RequestParam("memberId") Long memberId) {
-        String responseMessage = projectService.updateProject(projectId, request, memberId);
+                                                @AuthenticationPrincipal Member userDetails) {
+        String responseMessage = projectService.updateProject(projectId, request, userDetails.getId());
         return ResponseEntity.ok(responseMessage);
     }
 
     // 삭제
     @Operation(summary = "프로젝트 삭제", description = "특정 프로젝트를 삭제합니다.")
     @DeleteMapping("/{projectId}")
-    public ResponseEntity<Void> deleteProject(@PathVariable Long projectId,
-                                              @RequestParam("memberId") Long memberId) {
-        projectService.deleteProject(projectId, memberId);
-        return ResponseEntity.noContent().build();
+    public void deleteProject(@PathVariable Long projectId,
+                              @AuthenticationPrincipal Member userDetails) {
+        projectService.deleteProject(projectId, userDetails.getId());
     }
 
     @Operation(summary = "프로젝트 프로필 사진 변경", description = "프로젝트의 프로필 사진을 변경합니다.")
