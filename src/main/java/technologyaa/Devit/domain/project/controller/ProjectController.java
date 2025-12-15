@@ -6,7 +6,9 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import technologyaa.Devit.domain.auth.jwt.entity.Member;
 import technologyaa.Devit.domain.project.dto.ProjectCreateRequest;
 import technologyaa.Devit.domain.project.dto.ProjectResponse;
 import technologyaa.Devit.domain.project.dto.ProjectUpdateRequest;
@@ -30,9 +32,9 @@ public class ProjectController {
     @PostMapping
     public ResponseEntity<Long> createProject(
             @RequestBody ProjectCreateRequest request,
-            @RequestParam("memberId") Long authorId
+            @AuthenticationPrincipal Member userDetails
     ) {
-        Long projectId = projectService.createProject(request, authorId);
+        Long projectId = projectService.createProject(request, userDetails.getId());
         return ResponseEntity.status(HttpStatus.CREATED).body(projectId);
     }
 
