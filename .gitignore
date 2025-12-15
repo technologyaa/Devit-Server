@@ -39,3 +39,4 @@ out/
 clean-repo/
 src/main/resources/.env
 src/main/resources/.env
+.env
