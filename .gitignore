@@ -38,3 +38,4 @@ out/
 .DS_Store
 clean-repo/
 src/main/resources/.env
+src/main/resources/.env
