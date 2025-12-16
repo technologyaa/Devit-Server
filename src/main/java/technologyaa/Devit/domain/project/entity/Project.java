@@ -2,7 +2,7 @@ package technologyaa.Devit.domain.project.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-import technologyaa.Devit.domain.auth.jwt.entity.Member;
+import technologyaa.Devit.domain.auth.oauth.entity.User;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -14,6 +14,7 @@ import java.util.Set;
 @AllArgsConstructor
 @Builder
 public class Project {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "project_id")
@@ -30,5 +31,13 @@ public class Project {
 
     @Column(length = 500)
     private String profile;
-}
 
+
+    @ManyToMany
+    @JoinTable(
+            name = "project_participants",
+            joinColumns = @JoinColumn(name = "project_id"),
+            inverseJoinColumns = @JoinColumn(name = "user_id")
+    )
+    private Set<User> participants = new HashSet<>();
+}

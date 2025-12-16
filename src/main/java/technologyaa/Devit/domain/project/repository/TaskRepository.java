@@ -6,7 +6,9 @@ import technologyaa.Devit.domain.project.entity.Task;
 import java.util.List;
 
 public interface TaskRepository extends JpaRepository<Task, Long> {
-    List<Task> findByProject_ProjectId(Long projectId);
-}
 
+    List<Task> findByProject_ProjectId(Long projectId);
+
+    boolean existsByProject_ProjectId(Long projectId);
+}
 
