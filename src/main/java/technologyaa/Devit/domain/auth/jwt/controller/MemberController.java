@@ -57,5 +57,17 @@ public class MemberController {
     public APIResponse<?> refresh(@RequestBody ReGenerateTokenRequest request, HttpServletResponse response) {
         return memberService.reGenerateAccessToken(request, response);
     }
+
+    @Operation(summary = "현재 유저 조회", description = "현재 로그인한 유저의 정보를 조회합니다.")
+    @GetMapping("/me")
+    public APIResponse<?> getCurrentMember() {
+        return memberService.getCurrentMember();
+    }
+
+    @Operation(summary = "모든 유저 조회", description = "모든 유저의 목록을 조회합니다.")
+    @GetMapping("/members")
+    public APIResponse<?> getAllMembers() {
+        return memberService.getAllMembers();
+    }
 }
 
