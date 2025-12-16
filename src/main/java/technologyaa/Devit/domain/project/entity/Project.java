@@ -2,10 +2,16 @@ package technologyaa.Devit.domain.project.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+<<<<<<< HEAD
 import technologyaa.Devit.domain.auth.oauth.entity.User;
 
 import java.util.HashSet;
 import java.util.Set;
+=======
+import technologyaa.Devit.domain.review.entity.Review;
+
+import java.util.List;
+>>>>>>> origin/review
 
 @Entity
 @Getter
@@ -28,6 +34,16 @@ public class Project {
 
     @Enumerated(EnumType.STRING)
     private Major major;
+<<<<<<< HEAD
+=======
+
+
+    public List<Review> getParticipants() {
+        return List.of();
+    }
+
+}
+>>>>>>> origin/review
 
     @Column(length = 500)
     private String profile;

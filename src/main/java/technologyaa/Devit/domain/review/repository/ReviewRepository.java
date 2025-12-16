@@ -9,6 +9,7 @@ import java.util.List;
 
 public interface ReviewRepository extends JpaRepository<Review, Long> {
 
+<<<<<<< HEAD
     // 중복 리뷰 방지
     boolean existsByReviewerAndRevieweeAndProject(
             User reviewer,
@@ -24,4 +25,9 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
 
     // 리뷰 삭제 권한 체크 (작성자 본인)
     boolean existsByIdAndReviewer(Long id, User reviewer);
+=======
+    boolean existsByReviewerAndRevieweeAndProject(User reviewer, User reviewee, Project project);
+
+    List<Review> findByReviewee(User reviewee);
+>>>>>>> origin/review
 }

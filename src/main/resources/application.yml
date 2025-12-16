@@ -1,11 +1,10 @@
 spring:
-  application:
-    name: Devit
   datasource:
-    url: ${DB_URL}
-    username: ${DB_USERNAME}
-    password: ${DB_PASSWORD}
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
     driver-class-name: com.mysql.cj.jdbc.Driver
+
   jpa:
     hibernate:
       ddl-auto: update
@@ -16,12 +15,20 @@ spring:
 
   jwt:
     secret: ${JWT_SECRET}
-    access-token-expiration: ${JWT_ACCESS_TOKEN_EXPIRATION}
-    refresh-token-expiration: ${JWT_REFRESH_TOKEN_EXPIRATION}
+    access-token-expiration: ${JWT_ACCESS_TOKEN_EXPIRATION:3600000}
+    refresh-token-expiration: ${JWT_REFRESH_TOKEN_EXPIRATION:604800000}
 
   mail:
+    host: smtp.gmail.com
+    port: 587
     username: ${MAIL_USERNAME}
     password: ${MAIL_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
 
   data:
     redis:
@@ -45,6 +52,7 @@ spring:
           google:
             client-id: ${GOOGLE_CLIENT_ID}
             client-secret: ${GOOGLE_CLIENT_SECRET}
+            redirect-uri: "{baseUrl}/login/oauth2/code/google"
             scope:
               - email
               - profile

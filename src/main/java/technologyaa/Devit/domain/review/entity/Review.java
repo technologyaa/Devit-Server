@@ -9,13 +9,21 @@ import java.time.LocalDateTime;
 
 @Entity
 @Getter
+<<<<<<< HEAD
+=======
+@Setter
+>>>>>>> origin/review
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 @Table(
+<<<<<<< HEAD
         uniqueConstraints = @UniqueConstraint(
                 columnNames = {"reviewer_id", "reviewee_id", "project_id"}
         )
+=======
+        uniqueConstraints = @UniqueConstraint(columnNames = {"reviewer_id", "reviewee_id", "project_id"})
+>>>>>>> origin/review
 )
 public class Review {
 
@@ -41,7 +49,11 @@ public class Review {
     private LocalDateTime createdAt;
 
     @PrePersist
+<<<<<<< HEAD
     void prePersist() {
+=======
+    public void prePersist() {
+>>>>>>> origin/review
         this.createdAt = LocalDateTime.now();
     }
 }
