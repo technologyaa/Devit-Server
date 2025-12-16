@@ -11,12 +11,4 @@ public class ReviewException extends RuntimeException {
         super(errorCode.getMessage());
         this.errorCode = errorCode;
     }
-<<<<<<< HEAD
-=======
-
-    public ReviewException(ReviewErrorCode errorCode, String message) {
-        super(message);
-        this.errorCode = errorCode;
-    }
->>>>>>> origin/review
 }
