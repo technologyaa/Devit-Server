@@ -6,10 +6,8 @@ import org.hibernate.annotations.CreationTimestamp;
 import technologyaa.Devit.domain.auth.jwt.entity.Member;
 
 import java.time.LocalDateTime;
-import technologyaa.Devit.domain.auth.jwt.entity.Member;
-
-import java.util.HashSet;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Getter
@@ -42,4 +40,8 @@ public class Project {
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
     private LocalDateTime createAt = LocalDateTime.now();
+
+    @Builder.Default
+    @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Task> tasks = new ArrayList<>();
 }
