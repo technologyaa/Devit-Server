@@ -9,6 +9,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import technologyaa.Devit.domain.auth.jwt.dto.request.*;
+import technologyaa.Devit.domain.auth.jwt.dto.response.MemberResponse;
 import technologyaa.Devit.domain.auth.jwt.dto.response.SignInResponse;
 import technologyaa.Devit.domain.auth.jwt.entity.Member;
 import technologyaa.Devit.domain.auth.jwt.exception.AuthErrorCode;
@@ -20,6 +21,7 @@ import technologyaa.Devit.domain.file.service.FileStorageService;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -105,6 +107,21 @@ public class MemberService {
 
     public APIResponse<String> reGenerateAccessToken(ReGenerateTokenRequest request, HttpServletResponse response) {
         return tokenUseCase.reGenerateAccessToken(request, response);
+    }
+
+    public APIResponse<MemberResponse> getCurrentMember() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        Member member = memberRepository.findByUsername(auth.getName())
+                .orElseThrow(() -> new AuthException(AuthErrorCode.MEMBER_NOT_FOUND));
+        return APIResponse.ok(MemberResponse.from(member));
+    }
+
+    public APIResponse<List<MemberResponse>> getAllMembers() {
+        List<Member> members = memberRepository.findAll();
+        List<MemberResponse> memberResponses = members.stream()
+                .map(MemberResponse::from)
+                .collect(java.util.stream.Collectors.toList());
+        return APIResponse.ok(memberResponses);
     }
 }
 

@@ -30,5 +30,14 @@ public class Project {
 
     @Column(length = 500)
     private String profile;
+
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+        name = "project_member",
+        joinColumns = @JoinColumn(name = "project_id"),
+        inverseJoinColumns = @JoinColumn(name = "member_id")
+    )
+    @Builder.Default
+    private Set<Member> members = new HashSet<>();
 }
 

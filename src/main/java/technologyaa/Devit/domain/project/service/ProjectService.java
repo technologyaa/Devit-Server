@@ -6,10 +6,19 @@ import org.springframework.web.multipart.MultipartFile;
 import technologyaa.Devit.domain.common.APIResponse;
 import technologyaa.Devit.domain.file.service.FileStorageService;
 import technologyaa.Devit.domain.project.dto.ProjectRequest;
+import technologyaa.Devit.domain.project.dto.ProjectWithTasksResponse;
 import technologyaa.Devit.domain.project.entity.Project;
+import technologyaa.Devit.domain.project.entity.Task;
 import technologyaa.Devit.domain.project.exception.ProjectErrorCode;
 import technologyaa.Devit.domain.project.exception.ProjectException;
 import technologyaa.Devit.domain.project.repository.ProjectRepository;
+import technologyaa.Devit.domain.project.repository.TaskRepository;
+import technologyaa.Devit.domain.auth.jwt.entity.Member;
+import technologyaa.Devit.domain.auth.jwt.repository.MemberRepository;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import technologyaa.Devit.domain.auth.jwt.exception.AuthErrorCode;
+import technologyaa.Devit.domain.auth.jwt.exception.AuthException;
 
 import java.io.IOException;
 import java.util.List;
@@ -18,7 +27,9 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ProjectService {
     private final ProjectRepository projectRepository;
+    private final TaskRepository taskRepository;
     private final FileStorageService fileStorageService;
+    private final MemberRepository memberRepository;
 
     // create
     public Project create(ProjectRequest request) {
@@ -72,6 +83,22 @@ public class ProjectService {
         } catch (IOException e) {
             throw new RuntimeException("이미지 업로드 실패: " + e.getMessage());
         }
+    }
+
+    public APIResponse<List<ProjectWithTasksResponse>> getMyProjects() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        Member member = memberRepository.findByUsername(auth.getName())
+                .orElseThrow(() -> new AuthException(AuthErrorCode.MEMBER_NOT_FOUND));
+
+        List<Project> projects = projectRepository.findByMemberId(member.getId());
+        List<ProjectWithTasksResponse> projectResponses = projects.stream()
+                .map(project -> {
+                    List<Task> tasks = taskRepository.findByProject_ProjectId(project.getProjectId());
+                    return ProjectWithTasksResponse.from(project, tasks);
+                })
+                .collect(java.util.stream.Collectors.toList());
+
+        return APIResponse.ok(projectResponses);
     }
 }
 

@@ -55,5 +55,11 @@ public class ProjectController {
     public APIResponse<?> uploadProfileImage(@PathVariable Long id,@PathVariable("file")MultipartFile file) throws IOException {
         return projectService.uploadProjectsImage(id, file);
     }
+
+    @Operation(summary = "내가 참가한 프로젝트 조회", description = "현재 유저가 참가한 프로젝트 목록과 각 프로젝트의 업무를 조회합니다.")
+    @GetMapping("/my-projects")
+    public APIResponse<?> getMyProjects() {
+        return projectService.getMyProjects();
+    }
 }
 
