@@ -3,7 +3,6 @@ package technologyaa.Devit.domain.review.service;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import technologyaa.Devit.domain.auth.jwt.exception.AuthErrorCode;
 import technologyaa.Devit.domain.auth.oauth.entity.User;
 import technologyaa.Devit.domain.auth.oauth.repository.UserRepository;
 import technologyaa.Devit.domain.project.entity.Project;
@@ -12,8 +11,9 @@ import technologyaa.Devit.domain.review.dto.request.ReviewCreateRequest;
 import technologyaa.Devit.domain.review.dto.response.AverageRatingResponse;
 import technologyaa.Devit.domain.review.dto.response.ReviewResponse;
 import technologyaa.Devit.domain.review.entity.Review;
+import technologyaa.Devit.domain.auth.jwt.exception.ReviewErrorCode;
+import technologyaa.Devit.domain.auth.jwt.exception.ReviewException;
 import technologyaa.Devit.domain.review.repository.ReviewRepository;
-import technologyaa.Devit.domain.auth.jwt.exception.AuthException;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -34,7 +34,7 @@ public class ReviewService {
 
         Project project = projectRepository.findById(request.getProjectId())
                 .orElseThrow(() ->
-                        new AuthException(AuthErrorCode.MEMBER_NOT_FOUND));
+                        new ReviewException(ReviewErrorCode.PROJECT_NOT_FOUND));
 
         validateReview(reviewer, reviewee, project, request.getRating());
 
@@ -83,23 +83,23 @@ public class ReviewService {
     private User getUserOrThrow(Long id) {
         return userRepository.findById(id)
                 .orElseThrow(() ->
-                        new AuthException(AuthErrorCode.MEMBER_NOT_FOUND));
+                        new ReviewException(ReviewErrorCode.USER_NOT_FOUND));
     }
 
     private void validateReview(User reviewer, User reviewee, Project project, int rating) {
 
         if (rating < 0 || rating > 5) {
-            throw new AuthException(AuthErrorCode.EMAIL_VERIFICATION_FAILED);
+            throw new ReviewException(ReviewErrorCode.INVALID_RATING);
         }
 
         if (!project.getParticipants().contains(reviewer)
                 || !project.getParticipants().contains(reviewee)) {
-            throw new AuthException(AuthErrorCode.FORBIDDEN);
+            throw new ReviewException(ReviewErrorCode.FORBIDDEN_REVIEW);
         }
 
         if (reviewRepository.existsByReviewerAndRevieweeAndProject(
                 reviewer, reviewee, project)) {
-            throw new AuthException(AuthErrorCode.USER_ALREADY_EXISTS);
+            throw new ReviewException(ReviewErrorCode.DUPLICATE_REVIEW);
         }
     }
 }
