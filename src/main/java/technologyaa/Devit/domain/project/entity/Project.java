@@ -22,6 +22,9 @@ public class Project {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long projectId;
 
+    @Column(nullable = false, columnDefinition = "TEXT")
+    private String profile;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(nullable = false)
     private Member author;
