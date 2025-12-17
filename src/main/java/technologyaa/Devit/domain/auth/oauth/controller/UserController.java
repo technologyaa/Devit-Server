@@ -1,5 +1,7 @@
 package technologyaa.Devit.domain.auth.oauth.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import technologyaa.Devit.domain.auth.oauth.dto.UserInfoResponse;
 import technologyaa.Devit.domain.auth.oauth.entity.User;
 import technologyaa.Devit.domain.auth.oauth.repository.UserRepository;
@@ -17,6 +19,7 @@ import java.util.Optional;
 /**
  * OAuth 사용자 정보 관련 API 컨트롤러
  */
+@Tag(name = "OAuth 사용자 (OAuth User)", description = "OAuth 인증 사용자 정보 API")
 @Slf4j
 @RestController
 @RequestMapping("/api/users")
@@ -31,6 +34,7 @@ public class UserController {
      * @param oAuth2User OAuth2 인증된 사용자 정보
      * @return 사용자 정보 응답
      */
+    @Operation(summary = "현재 OAuth 사용자 조회", description = "현재 로그인한 OAuth 사용자의 정보를 조회합니다.")
     @GetMapping("/me")
     public ResponseEntity<UserInfoResponse> getCurrentUser(@AuthenticationPrincipal OAuth2User oAuth2User) {
         if (oAuth2User == null) {
