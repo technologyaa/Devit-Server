@@ -142,7 +142,7 @@ public class NewFeaturesIntegrationTest {
                 .role(Role.ROLE_USER)
                 .isDeveloper(false)
                 .build();
-        memberRepository.save(otherMember);
+        otherMember = memberRepository.save(otherMember);
 
         ChatMessage otherChatMessage = new ChatMessage();
         otherChatMessage.setSender("otheruser");
@@ -155,7 +155,9 @@ public class NewFeaturesIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data").isArray())
-                .andExpect(jsonPath("$.data[0].username").exists());
+                .andExpect(jsonPath("$.data.length()").value(1))
+                .andExpect(jsonPath("$.data[0].username").value("otheruser"))
+                .andExpect(jsonPath("$.data[0].email").value("other@example.com"));
     }
 }
 

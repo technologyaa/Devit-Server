@@ -65,27 +65,27 @@ public class ProjectService {
     }
 
     // read one
-    @Transactional(readOnly = true)
-    public ProjectResponse findProjectById(Long id) {
-        Project project = projectRepository.findById(id)
-                .orElseThrow(() -> new ProjectException(ProjectErrorCode.PROJECT_NOT_FOUND));
-        return new ProjectResponse(project);
-    }
+        @Transactional(readOnly = true)
+        public ProjectResponse findProjectById(Long id) {
+            Project project = projectRepository.findById(id)
+                    .orElseThrow(() -> new ProjectException(ProjectErrorCode.PROJECT_NOT_FOUND));
+            return new ProjectResponse(project);
+        }
 
-    // update
-    @Transactional
-    public String updateProject(Long projectId, ProjectUpdateRequest request, Long memberId) {
-        Project project = projectRepository.findById(projectId)
-                .orElseThrow(() -> new ProjectException(ProjectErrorCode.PROJECT_NOT_FOUND));
+        // update
+        @Transactional
+        public String updateProject(Long projectId, ProjectUpdateRequest request, Long memberId) {
+            Project project = projectRepository.findById(projectId)
+                    .orElseThrow(() -> new ProjectException(ProjectErrorCode.PROJECT_NOT_FOUND));
 
-        checkProjectAuthor(project, memberId);
+            checkProjectAuthor(project, memberId);
 
-        project.setTitle(request.getTitle());
-        project.setContent(request.getContent());
-        project.setIsCompleted(request.getIsCompleted());
+            project.setTitle(request.getTitle());
+            project.setContent(request.getContent());
+            project.setIsCompleted(request.getIsCompleted());
 
-        return null;
-    }
+            return "프로젝트가 수정되었습니다.";
+        }
 
     // delete
     @Transactional

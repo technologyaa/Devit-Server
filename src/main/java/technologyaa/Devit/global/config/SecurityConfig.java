@@ -51,6 +51,7 @@ public class SecurityConfig {
                                 .requestMatchers("/api/users/me").permitAll() // 로그인 상태 확인용
                                 .requestMatchers("/projects/**").permitAll() // 프로젝트 API 접근 허용
                                 .requestMatchers("/uploads/**").permitAll() // 업로드된 파일 접근 허용
+                                .requestMatchers("/chat/**").authenticated() // 채팅 API는 인증 필요
                                 .requestMatchers("/api/profile/**").authenticated()
                                 .requestMatchers("/auth/profile/**").authenticated()
                                 .requestMatchers("/projects/profile/**").authenticated()

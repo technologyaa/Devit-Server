@@ -76,10 +76,7 @@ public class ProjectController {
 
     @Operation(summary = "프로젝트 프로필 사진 변경", description = "프로젝트의 프로필 사진을 변경합니다.")
     @PutMapping("/profile/image/{id}")
-    public APIResponse<?> uploadProfileImage(
-            @PathVariable Long id,
-            @PathVariable("file")MultipartFile file
-    ) throws IOException {
+    public APIResponse<?> uploadProfileImage(@PathVariable Long id, @RequestParam("file") MultipartFile file) throws IOException {
         return projectService.uploadProjectsImage(id, file);
     }
 

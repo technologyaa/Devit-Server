@@ -9,7 +9,6 @@ import technologyaa.Devit.domain.auth.jwt.exception.AuthErrorCode;
 import technologyaa.Devit.domain.auth.jwt.exception.AuthException;
 import technologyaa.Devit.domain.auth.jwt.repository.MemberRepository;
 import technologyaa.Devit.domain.common.APIResponse;
-import technologyaa.Devit.domain.websocketchat.dto.ChatMessage;
 import technologyaa.Devit.domain.websocketchat.repository.ChatMessageRepository;
 
 import java.util.List;

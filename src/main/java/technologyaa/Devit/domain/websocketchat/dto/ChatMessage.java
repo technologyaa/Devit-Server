@@ -1,5 +1,7 @@
 package technologyaa.Devit.domain.websocketchat.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.NoArgsConstructor; // 기본 생성자 어노테이션 추가
@@ -24,8 +26,22 @@ public class ChatMessage {
     @Column(nullable = false, length = 100)
     private String sender;
     
+    @Column(length = 100)
+    private String receiver; // 수신자 (null이면 브로드캐스트)
+    
     @Column(nullable = false, length = 1000)
     private String content; // 클라이언트의 JSON 필드명과 일치시킵니다.
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "room_id")
+    @JsonIgnore
+    private technologyaa.Devit.domain.websocketchat.entity.ChatRoom room; // 채팅방
+
+    // JSON 직렬화를 위한 roomId getter
+    @JsonProperty("roomId")
+    public Long getRoomId() {
+        return room != null ? room.getId() : null;
+    }
 
     @Enumerated(EnumType.STRING) // Enum을 DB에 문자열로 저장
     @Column(nullable = false)

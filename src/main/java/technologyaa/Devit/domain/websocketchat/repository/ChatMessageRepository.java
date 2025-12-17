@@ -21,4 +21,21 @@ public interface ChatMessageRepository extends JpaRepository<ChatMessage, Long> 
     // 고유한 sender 목록 조회
     @org.springframework.data.jpa.repository.Query("SELECT DISTINCT c.sender FROM ChatMessage c")
     java.util.List<String> findDistinctSenders();
+    
+    // 특정 채팅방의 메시지 조회
+    java.util.List<ChatMessage> findByRoom_IdOrderByTimestampAsc(Long roomId);
+    
+    // 특정 채팅방의 최근 메시지 조회 (페이징)
+    org.springframework.data.domain.Page<ChatMessage> findByRoom_IdOrderByTimestampDesc(
+            Long roomId, org.springframework.data.domain.Pageable pageable);
+    
+    // 특정 사용자 간의 1:1 메시지 조회
+    @org.springframework.data.jpa.repository.Query(
+        "SELECT c FROM ChatMessage c WHERE " +
+        "((c.sender = :username1 AND c.receiver = :username2) OR " +
+        " (c.sender = :username2 AND c.receiver = :username1)) " +
+        "ORDER BY c.timestamp ASC")
+    java.util.List<ChatMessage> findConversationBetweenUsers(
+            @org.springframework.data.repository.query.Param("username1") String username1,
+            @org.springframework.data.repository.query.Param("username2") String username2);
 }
