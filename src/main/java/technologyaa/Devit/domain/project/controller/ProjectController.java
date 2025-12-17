@@ -4,10 +4,13 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+import technologyaa.Devit.domain.common.APIResponse;
 import technologyaa.Devit.domain.project.dto.ProjectRequest;
 import technologyaa.Devit.domain.project.entity.Project;
 import technologyaa.Devit.domain.project.service.ProjectService;
 
+import java.io.IOException;
 import java.util.List;
 
 @Tag(name = "프로젝트 (Project)", description = "프로젝트 CRUD API")
@@ -45,6 +48,18 @@ public class ProjectController {
     @DeleteMapping("/{projectId}")
     public void delete(@PathVariable Long projectId) {
         projectService.delete(projectId);
+    }
+
+    @Operation(summary = "프로젝트 프로필 사진 변경", description = "프로젝트의 프로필 사진을 변경합니다.")
+    @PutMapping("/profile/image/{id}")
+    public APIResponse<?> uploadProfileImage(@PathVariable Long id, @RequestParam("file") MultipartFile file) throws IOException {
+        return projectService.uploadProjectsImage(id, file);
+    }
+
+    @Operation(summary = "내가 참가한 프로젝트 조회", description = "현재 유저가 참가한 프로젝트 목록과 각 프로젝트의 업무를 조회합니다.")
+    @GetMapping("/my-projects")
+    public APIResponse<?> getMyProjects() {
+        return projectService.getMyProjects();
     }
 }
 

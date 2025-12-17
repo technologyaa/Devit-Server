@@ -1,8 +1,8 @@
-package technologyaa.Devit.domain.auth.jwt.dto;
+package technologyaa.Devit.domain.auth.jwt.dto.request;
 
 import jakarta.validation.constraints.NotNull;
 
-public record SignOutRequest(
+public record CheckUsernameRequest(
         @NotNull
         String username
 ) {

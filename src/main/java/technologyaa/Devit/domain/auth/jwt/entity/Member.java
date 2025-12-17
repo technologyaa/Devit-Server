@@ -13,7 +13,7 @@ public class Member {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long Id;
+    private Long id;
 
     @Column(unique = true)
     private String username;
@@ -26,6 +26,8 @@ public class Member {
 
     @Enumerated(EnumType.STRING)
     private Role role;
+
+    private boolean isDeveloper;
 
     @Column(length = 500)
     private String profile;

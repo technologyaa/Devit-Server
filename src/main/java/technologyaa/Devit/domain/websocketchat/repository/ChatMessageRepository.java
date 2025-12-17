@@ -14,4 +14,11 @@ public interface ChatMessageRepository extends JpaRepository<ChatMessage, Long> 
     // 특정 시간 이후 메시지 조회
     java.util.List<ChatMessage> findByTimestampAfterOrderByTimestampAsc(
             java.time.LocalDateTime timestamp);
+    
+    // 특정 유저가 보낸 메시지 조회
+    java.util.List<ChatMessage> findBySender(String sender);
+    
+    // 고유한 sender 목록 조회
+    @org.springframework.data.jpa.repository.Query("SELECT DISTINCT c.sender FROM ChatMessage c")
+    java.util.List<String> findDistinctSenders();
 }
