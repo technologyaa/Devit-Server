@@ -41,6 +41,7 @@ public class Project {
 
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
+    @Builder.Default
     private LocalDateTime createAt = LocalDateTime.now();
 
     @Builder.Default

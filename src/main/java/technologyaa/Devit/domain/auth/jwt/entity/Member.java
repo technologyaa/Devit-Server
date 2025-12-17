@@ -3,6 +3,9 @@ package technologyaa.Devit.domain.auth.jwt.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.HashSet;
+import java.util.Set;
+
 @Entity
 @Getter
 @Setter
@@ -38,6 +41,7 @@ public class Member {
             joinColumns = @JoinColumn(name = "project_id"),
             inverseJoinColumns = @JoinColumn(name = "member_id")
     )
+    @Builder.Default
     private Set<Member> members = new HashSet<>();
 }
 
