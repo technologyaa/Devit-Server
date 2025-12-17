@@ -9,15 +9,18 @@ import technologyaa.Devit.domain.auth.jwt.repository.MemberRepository;
 import technologyaa.Devit.domain.project.dto.ProjectCreateRequest;
 import technologyaa.Devit.domain.project.dto.ProjectResponse;
 import technologyaa.Devit.domain.project.dto.ProjectUpdateRequest;
+import technologyaa.Devit.domain.project.dto.ProjectWithTasksResponse;
 import org.springframework.web.multipart.MultipartFile;
 import technologyaa.Devit.domain.common.APIResponse;
 import technologyaa.Devit.domain.file.service.FileStorageService;
 import technologyaa.Devit.domain.project.entity.Project;
+import technologyaa.Devit.domain.project.entity.Task;
 import technologyaa.Devit.domain.project.exception.AuthorErrorCode;
 import technologyaa.Devit.domain.project.exception.AuthorException;
 import technologyaa.Devit.domain.project.exception.ProjectErrorCode;
 import technologyaa.Devit.domain.project.exception.ProjectException;
 import technologyaa.Devit.domain.project.repository.ProjectRepository;
+import technologyaa.Devit.domain.project.repository.TaskRepository;
 
 import java.io.IOException;
 import java.util.List;
@@ -31,6 +34,7 @@ public class ProjectService {
     private final ProjectRepository projectRepository;
     private final MemberRepository memberRepository;
     private final FileStorageService fileStorageService;
+    private final TaskRepository taskRepository;
 
     private void checkProjectAuthor(Project project, Long memberId) {
         if (!project.getAuthor().getId().equals(memberId)) {
@@ -122,6 +126,17 @@ public class ProjectService {
                 .orElseThrow(() -> new RuntimeException("해당 프로젝트를 찾을 수 없습니다."));
 
         return project.getMembers();
+    }
+
+    @Transactional(readOnly = true)
+    public List<ProjectWithTasksResponse> getMyProjects(Long memberId) {
+        List<Project> projects = projectRepository.findByMemberId(memberId);
+        return projects.stream()
+                .map(project -> {
+                    List<Task> tasks = taskRepository.findByProject_ProjectId(project.getProjectId());
+                    return ProjectWithTasksResponse.from(project, tasks);
+                })
+                .collect(Collectors.toList());
     }
 }
 

@@ -16,6 +16,8 @@ import technologyaa.Devit.domain.auth.jwt.exception.AuthErrorCode;
 import technologyaa.Devit.domain.auth.jwt.exception.AuthException;
 import technologyaa.Devit.domain.auth.jwt.repository.MemberRepository;
 import technologyaa.Devit.domain.common.APIResponse;
+import technologyaa.Devit.domain.developer.entity.Developer;
+import technologyaa.Devit.domain.developer.repository.DeveloperRepository;
 import technologyaa.Devit.domain.file.service.FileStorageService;
 
 import java.io.IOException;
@@ -32,6 +34,7 @@ public class MemberService {
     private final BCryptPasswordEncoder passwordEncoder;
     private final FileStorageService fileStorageService;
     private final TokenUseCase tokenUseCase;
+    private final DeveloperRepository developerRepository;
 
     public APIResponse<String> signUp(SignUpRequest request) {
         if (memberRepository.existsByUsername(request.username())) {
@@ -114,13 +117,17 @@ public class MemberService {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         Member member = memberRepository.findByUsername(auth.getName())
                 .orElseThrow(() -> new AuthException(AuthErrorCode.MEMBER_NOT_FOUND));
-        return APIResponse.ok(MemberResponse.from(member));
+        Developer developer = developerRepository.findById(member.getId()).orElse(null);
+        return APIResponse.ok(MemberResponse.from(member, developer != null ? developer.getMajor() : null));
     }
 
     public APIResponse<List<MemberResponse>> getAllMembers() {
         List<Member> members = memberRepository.findAll();
         List<MemberResponse> memberResponses = members.stream()
-                .map(MemberResponse::from)
+                .map(member -> {
+                    Developer developer = developerRepository.findById(member.getId()).orElse(null);
+                    return MemberResponse.from(member, developer != null ? developer.getMajor() : null);
+                })
                 .collect(java.util.stream.Collectors.toList());
         return APIResponse.ok(memberResponses);
     }
@@ -128,7 +135,10 @@ public class MemberService {
     public APIResponse<List<MemberResponse>> getDevelopers() {
         List<Member> developers = memberRepository.findByRole(technologyaa.Devit.domain.auth.jwt.entity.Role.ROLE_DEVELOPER);
         List<MemberResponse> developerResponses = developers.stream()
-                .map(MemberResponse::from)
+                .map(member -> {
+                    Developer developer = developerRepository.findById(member.getId()).orElse(null);
+                    return MemberResponse.from(member, developer != null ? developer.getMajor() : null);
+                })
                 .collect(java.util.stream.Collectors.toList());
         return APIResponse.ok(developerResponses);
     }

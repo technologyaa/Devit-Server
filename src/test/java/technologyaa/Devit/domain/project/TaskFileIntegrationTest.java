@@ -8,13 +8,13 @@ import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.transaction.annotation.Transactional;
-import technologyaa.Devit.domain.project.dto.ProjectRequest;
+import technologyaa.Devit.domain.project.dto.ProjectCreateRequest;
 import technologyaa.Devit.domain.project.dto.TaskRequest;
-import technologyaa.Devit.domain.project.entity.Major;
 import technologyaa.Devit.domain.project.entity.Project;
 import technologyaa.Devit.domain.project.entity.Task;
 import technologyaa.Devit.domain.project.entity.TaskFile;
 import technologyaa.Devit.domain.project.entity.Task.TaskStatus;
+import technologyaa.Devit.domain.project.repository.ProjectRepository;
 import technologyaa.Devit.domain.project.repository.TaskFileRepository;
 import technologyaa.Devit.domain.project.repository.TaskRepository;
 import technologyaa.Devit.domain.auth.jwt.entity.Member;
@@ -33,7 +33,22 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
 @TestPropertySource(properties = {
-    "file.upload.dir=./test-uploads"
+    "file.upload.dir=./test-uploads",
+    "spring.datasource.url=jdbc:h2:mem:testdb",
+    "spring.datasource.username=sa",
+    "spring.datasource.password=",
+    "spring.datasource.driver-class-name=org.h2.Driver",
+    "spring.jpa.hibernate.ddl-auto=create-drop",
+    "spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.H2Dialect",
+    "spring.jpa.show-sql=false",
+    "spring.jwt.secret=test-secret-key-for-testing-purposes-only-minimum-length-required",
+    "spring.jwt.access-token-expiration=3600000",
+    "spring.jwt.refresh-token-expiration=86400000",
+    "spring.data.redis.host=localhost",
+    "spring.data.redis.port=6379",
+    "spring.security.oauth2.client.registration.google.client-id=test-client-id",
+    "spring.security.oauth2.client.registration.google.client-secret=test-client-secret",
+    "server.port=0"
 })
 @Transactional
 public class TaskFileIntegrationTest {
@@ -54,7 +69,12 @@ public class TaskFileIntegrationTest {
     private TaskFileRepository taskFileRepository;
 
     @Autowired
+    private ProjectRepository projectRepository;
+
+    @Autowired
     private MemberRepository memberRepository;
+
+    private Member testMember;
 
     @BeforeEach
     public void setUp() throws Exception {
@@ -65,8 +85,10 @@ public class TaskFileIntegrationTest {
         }
 
         // 테스트용 유저 생성
-        if (!memberRepository.existsByUsername("testuser")) {
-            Member testMember = Member.builder()
+        testMember = memberRepository.findByUsername("testuser")
+                .orElse(null);
+        if (testMember == null) {
+            testMember = Member.builder()
                     .username("testuser")
                     .password("encodedPassword")
                     .email("test@example.com")
@@ -75,7 +97,7 @@ public class TaskFileIntegrationTest {
                     .role(Role.ROLE_USER)
                     .isDeveloper(false)
                     .build();
-            memberRepository.save(testMember);
+            testMember = memberRepository.save(testMember);
         }
     }
 
@@ -83,11 +105,11 @@ public class TaskFileIntegrationTest {
     @WithMockUser(username = "testuser")
     public void testCreateTaskAndUploadFile() throws Exception {
         // 1. 프로젝트 생성
-        ProjectRequest projectRequest = new ProjectRequest();
+        ProjectCreateRequest projectRequest = new ProjectCreateRequest();
         projectRequest.setTitle("테스트 프로젝트");
         projectRequest.setContent("테스트 내용");
-        projectRequest.setMajor(Major.BACKEND);
-        Project project = projectService.create(projectRequest);
+        Long projectId = projectService.createProject(projectRequest, testMember.getId());
+        Project project = projectRepository.findById(projectId).orElseThrow();
         assertNotNull(project);
         assertNotNull(project.getProjectId());
 
@@ -130,11 +152,11 @@ public class TaskFileIntegrationTest {
     @WithMockUser(username = "testuser")
     public void testFileDownload() throws Exception {
         // 프로젝트 생성
-        ProjectRequest projectRequest = new ProjectRequest();
+        ProjectCreateRequest projectRequest = new ProjectCreateRequest();
         projectRequest.setTitle("다운로드 테스트 프로젝트");
         projectRequest.setContent("테스트 내용");
-        projectRequest.setMajor(Major.BACKEND);
-        Project project = projectService.create(projectRequest);
+        Long projectId = projectService.createProject(projectRequest, testMember.getId());
+        Project project = projectRepository.findById(projectId).orElseThrow();
 
         // 업무 생성
         TaskRequest taskRequest = new TaskRequest();
@@ -166,11 +188,11 @@ public class TaskFileIntegrationTest {
     @WithMockUser(username = "testuser")
     public void testGetFilesByTaskId() throws Exception {
         // 프로젝트 생성
-        ProjectRequest projectRequest = new ProjectRequest();
+        ProjectCreateRequest projectRequest = new ProjectCreateRequest();
         projectRequest.setTitle("목록 테스트 프로젝트");
         projectRequest.setContent("테스트 내용");
-        projectRequest.setMajor(Major.BACKEND);
-        Project project = projectService.create(projectRequest);
+        Long projectId = projectService.createProject(projectRequest, testMember.getId());
+        Project project = projectRepository.findById(projectId).orElseThrow();
 
         // 업무 생성
         TaskRequest taskRequest = new TaskRequest();
@@ -207,11 +229,11 @@ public class TaskFileIntegrationTest {
     @WithMockUser(username = "testuser")
     public void testDeleteFile() throws Exception {
         // 프로젝트 생성
-        ProjectRequest projectRequest = new ProjectRequest();
+        ProjectCreateRequest projectRequest = new ProjectCreateRequest();
         projectRequest.setTitle("삭제 테스트 프로젝트");
         projectRequest.setContent("테스트 내용");
-        projectRequest.setMajor(Major.BACKEND);
-        Project project = projectService.create(projectRequest);
+        Long projectId = projectService.createProject(projectRequest, testMember.getId());
+        Project project = projectRepository.findById(projectId).orElseThrow();
 
         // 업무 생성
         TaskRequest taskRequest = new TaskRequest();
@@ -246,11 +268,11 @@ public class TaskFileIntegrationTest {
     @WithMockUser(username = "testuser")
     public void testTaskCRUD() throws Exception {
         // 프로젝트 생성
-        ProjectRequest projectRequest = new ProjectRequest();
+        ProjectCreateRequest projectRequest = new ProjectCreateRequest();
         projectRequest.setTitle("CRUD 테스트 프로젝트");
         projectRequest.setContent("테스트 내용");
-        projectRequest.setMajor(Major.BACKEND);
-        Project project = projectService.create(projectRequest);
+        Long projectId = projectService.createProject(projectRequest, testMember.getId());
+        Project project = projectRepository.findById(projectId).orElseThrow();
 
         // 업무 생성
         TaskRequest taskRequest = new TaskRequest();

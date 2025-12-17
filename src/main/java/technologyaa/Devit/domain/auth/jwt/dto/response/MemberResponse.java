@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import technologyaa.Devit.domain.auth.jwt.entity.Member;
+import technologyaa.Devit.domain.developer.entity.Major;
 
 @Getter
 @Builder
@@ -19,8 +20,9 @@ public class MemberResponse {
     private String role;
     private boolean isDeveloper;
     private String profile;
+    private Major major;
 
-    public static MemberResponse from(Member member) {
+    public static MemberResponse from(Member member, Major major) {
         return MemberResponse.builder()
                 .id(member.getId())
                 .username(member.getUsername())
@@ -30,6 +32,7 @@ public class MemberResponse {
                 .role(member.getRole() != null ? member.getRole().toString() : null)
                 .isDeveloper(member.isDeveloper())
                 .profile(member.getProfile())
+                .major(major)
                 .build();
     }
 }
