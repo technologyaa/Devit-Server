@@ -1,22 +1,23 @@
-package technologyaa.Devit.domain.profile.dto;
+package technologyaa.Devit.domain.profile.dto.response;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.Builder;
 
-import java.util.List;
+import technologyaa.Devit.domain.auth.jwt.entity.Member;
+import technologyaa.Devit.domain.auth.jwt.entity.Role;
 
-@Builder
 public record ProfileResponse(
-        @JsonProperty("id")
-        String name,
-        String job,
+        String username,
         String email,
-        @JsonProperty("img")
-        String profileImageUrl,
-        @JsonProperty("CompletedProjects")
-        String completedProjects,
-        @JsonProperty("Temp")
-        String temperature,
-        @JsonProperty("projectList")
-        List<ProfileProjectResponse> projectList
-) { }
+        Long credit,
+        Role role,
+        String profileImage
+) {
+        public static ProfileResponse of(Member member) {
+                return new ProfileResponse(
+                        member.getUsername(),
+                        member.getEmail(),
+                        member.getCredit(),
+                        member.getRole(),
+                        member.getProfile()
+                );
+        }
+}

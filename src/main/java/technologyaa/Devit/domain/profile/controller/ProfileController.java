@@ -1,44 +1,45 @@
 package technologyaa.Devit.domain.profile.controller;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
+import technologyaa.Devit.domain.common.APIResponse;
 import technologyaa.Devit.domain.profile.dto.request.UpdateRequest;
-import technologyaa.Devit.domain.profile.dto.response.GetResponse;
-import technologyaa.Devit.domain.profile.dto.ProfileResponse;
 import technologyaa.Devit.domain.profile.service.ProfileService;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/profile")
+@RequestMapping("/profile")
 public class ProfileController {
 
     private final ProfileService profileService;
 
+    /** 내 프로필 */
     @GetMapping
-    public ResponseEntity<GetResponse> getProfile() {
-        return ResponseEntity.ok(profileService.getProfile());
+    public APIResponse<?> getProfile() {
+        return profileService.getProfile();
     }
 
+    /** 특정 유저 프로필 */
     @GetMapping("/{id}")
-    public ResponseEntity<GetResponse> getProfileById(@PathVariable Long id) {
-        return ResponseEntity.ok(profileService.getProfileById(id));
+    public APIResponse<?> getProfileById(@PathVariable Long id) {
+        return profileService.getProfileById(id);
     }
 
+    /** 프로필 수정 */
     @PatchMapping
-    public ResponseEntity<String> updateProfile(@RequestBody UpdateRequest request) {
-        return ResponseEntity.ok(profileService.updateProfile(request));
+    public APIResponse<?> updateProfile(@RequestBody UpdateRequest request) {
+        return profileService.updateProfile(request);
     }
 
+    /** 프로필 삭제 */
     @DeleteMapping
-    public ResponseEntity<Void> deleteProfile() {
-        profileService.deleteProfile();
-        return ResponseEntity.noContent().build();
+    public APIResponse<?> deleteProfile() {
+        return profileService.deleteProfile();
     }
 
+    /** 기본 프로필 */
     @GetMapping("/default")
-    public ResponseEntity<ProfileResponse> getDefaultProfile() {
-        return ResponseEntity.ok(profileService.getDefaultProfile());
+    public APIResponse<?> getDefaultProfile() {
+        return profileService.getDefaultProfile();
     }
 }
