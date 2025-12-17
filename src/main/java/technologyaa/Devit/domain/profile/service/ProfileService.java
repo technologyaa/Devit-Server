@@ -25,11 +25,12 @@ public class ProfileService {
     private Member getCurrentMember() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 
-        if (auth == null || !auth.isAuthenticated()) {
+        if (auth == null || !auth.isAuthenticated() || auth.getPrincipal().equals("anonymousUser")) {
             throw new AuthException(AuthErrorCode.UNAUTHORIZED);
         }
 
-        return memberRepository.findByUsername(auth.getName())
+        String username = auth.getName();
+        return memberRepository.findByUsername(username)
                 .orElseThrow(() -> new AuthException(AuthErrorCode.MEMBER_NOT_FOUND));
     }
 
@@ -45,17 +46,23 @@ public class ProfileService {
     public APIResponse<GetResponse> getProfileById(Long id) {
         Member member = memberRepository.findById(id)
                 .orElseThrow(() -> new AuthException(AuthErrorCode.MEMBER_NOT_FOUND));
-
         return APIResponse.ok(GetResponse.of(member));
     }
 
-    /** 프로필 수정 */
+    /** 프로필 수정 (중복체크 포함) */
     public APIResponse<ProfileResponse> updateProfile(UpdateRequest request) {
         Member member = getCurrentMember();
 
-        if (request.username() != null) {
+        // 유저네임 변경 시
+        if (request.username() != null && !request.username().equals(member.getUsername())) {
+            boolean exists = memberRepository.existsByUsername(request.username());
+            if (exists) {
+                throw new AuthException(AuthErrorCode.USERNAME_ALREADY_EXISTS); // 중복 시 예외
+            }
             member.setUsername(request.username());
         }
+
+        // 프로필 이미지 변경
         if (request.profile() != null) {
             member.setProfile(request.profile());
         }
@@ -76,8 +83,7 @@ public class ProfileService {
         Member member = memberRepository.findAll()
                 .stream()
                 .findFirst()
-                .orElseThrow(() ->
-                        new AuthException(AuthErrorCode.MEMBER_NOT_FOUND));
+                .orElseThrow(() -> new AuthException(AuthErrorCode.MEMBER_NOT_FOUND));
 
         return APIResponse.ok(ProfileResponse.of(member));
     }

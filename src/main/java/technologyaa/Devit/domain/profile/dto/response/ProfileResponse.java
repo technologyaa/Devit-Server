@@ -9,7 +9,7 @@ public record ProfileResponse(
         String email,
         Long credit,
         Role role,
-        String profileImage
+        String profile
 ) {
         public static ProfileResponse of(Member member) {
                 return new ProfileResponse(
