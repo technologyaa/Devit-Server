@@ -62,10 +62,6 @@ public class ProfileService {
             member.setUsername(request.username());
         }
 
-        // 프로필 이미지 변경
-        if (request.profile() != null) {
-            member.setProfile(request.profile());
-        }
 
         return APIResponse.ok(ProfileResponse.of(member));
     }
