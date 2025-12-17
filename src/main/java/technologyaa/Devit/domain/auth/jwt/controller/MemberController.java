@@ -11,6 +11,7 @@ import technologyaa.Devit.domain.auth.jwt.dto.request.ReGenerateTokenRequest;
 import technologyaa.Devit.domain.auth.jwt.dto.request.SignInRequest;
 import technologyaa.Devit.domain.auth.jwt.dto.request.SignOutRequest;
 import technologyaa.Devit.domain.auth.jwt.dto.request.SignUpRequest;
+import technologyaa.Devit.domain.auth.jwt.dto.request.CheckUsernameRequest;
 import technologyaa.Devit.domain.auth.jwt.service.MemberService;
 import technologyaa.Devit.domain.common.APIResponse;
 
@@ -43,7 +44,7 @@ public class MemberController {
 
     @Operation(summary = "아이디 중복 확인", description = "아이디가 기존에 있는 아이디인지 확인합니다.")
     @PostMapping("/check")
-    public boolean checkandUsername(@Valid @RequestBody SignOutRequest request) {
+    public boolean checkandUsername(@Valid @RequestBody CheckUsernameRequest request) {
         return memberService.checkUsername(request);
     }
 
