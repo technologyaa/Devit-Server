@@ -13,6 +13,7 @@ import java.util.List;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/chat/rooms")
+@CrossOrigin(origins = {"http://localhost:5173", "https://devit.run"}, allowCredentials = "true")
 public class ChatRoomController {
 
     private final ChatRoomService chatRoomService;
