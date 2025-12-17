@@ -3,6 +3,9 @@ package technologyaa.Devit.domain.project.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Entity
 @Getter
 @Setter
@@ -31,6 +34,10 @@ public class Task {
     public enum TaskStatus {
         TODO, IN_PROGRESS, DONE
     }
+
+    @Builder.Default
+    @OneToMany(mappedBy = "task", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<TaskFile> taskFiles = new ArrayList<>();
 }
 
 
