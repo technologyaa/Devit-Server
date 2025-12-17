@@ -6,15 +6,17 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import technologyaa.Devit.domain.auth.jwt.entity.Member;
 import technologyaa.Devit.domain.project.dto.ProjectCreateRequest;
 import technologyaa.Devit.domain.project.dto.ProjectResponse;
 import technologyaa.Devit.domain.project.dto.ProjectUpdateRequest;
+import technologyaa.Devit.domain.project.dto.ProjectWithTasksResponse;
+import technologyaa.Devit.domain.common.APIResponse;
 import org.springframework.web.multipart.MultipartFile;
 import technologyaa.Devit.domain.common.APIResponse;
 import technologyaa.Devit.domain.project.service.ProjectService;
+import technologyaa.Devit.global.util.SecurityUtil;
 
 import java.io.IOException;
 import java.util.List;
@@ -27,15 +29,16 @@ import java.util.Set;
 public class ProjectController {
 
     private final ProjectService projectService;
+    private final SecurityUtil securityUtil;
 
     // 생성
     @Operation(summary = "프로젝트 생성", description = "새로운 프로젝트를 생성합니다.")
     @PostMapping
     public ResponseEntity<Long> createProject(
-            @RequestBody ProjectCreateRequest request,
-            @AuthenticationPrincipal Member userDetails
+            @RequestBody ProjectCreateRequest request
     ) {
-        Long projectId = projectService.createProject(request, userDetails.getId());
+        Member currentMember = securityUtil.getMember();
+        Long projectId = projectService.createProject(request, currentMember.getId());
         return ResponseEntity.status(HttpStatus.CREATED).body(projectId);
     }
 
@@ -60,18 +63,18 @@ public class ProjectController {
     @PutMapping("/{projectId}")
     public ResponseEntity<String> updateProject(@Parameter(description = "프로젝트 ID", required = true, example = "1")
                                                 @PathVariable Long projectId,
-                                                @RequestBody ProjectUpdateRequest request,
-                                                @AuthenticationPrincipal Member userDetails) {
-        String responseMessage = projectService.updateProject(projectId, request, userDetails.getId());
+                                                @RequestBody ProjectUpdateRequest request) {
+        Member currentMember = securityUtil.getMember();
+        String responseMessage = projectService.updateProject(projectId, request, currentMember.getId());
         return ResponseEntity.ok(responseMessage);
     }
 
     // 삭제
     @Operation(summary = "프로젝트 삭제", description = "특정 프로젝트를 삭제합니다.")
     @DeleteMapping("/{projectId}")
-    public void deleteProject(@PathVariable Long projectId,
-                              @AuthenticationPrincipal Member userDetails) {
-        projectService.deleteProject(projectId, userDetails.getId());
+    public void deleteProject(@PathVariable Long projectId) {
+        Member currentMember = securityUtil.getMember();
+        projectService.deleteProject(projectId, currentMember.getId());
     }
 
     @Operation(summary = "프로젝트 프로필 사진 변경", description = "프로젝트의 프로필 사진을 변경합니다.")
@@ -85,6 +88,14 @@ public class ProjectController {
     public ResponseEntity<Set<Member>> getProjectMembers(@PathVariable Long projectId) {
         Set<Member> members = projectService.getProjectMembers(projectId);
         return ResponseEntity.ok(members);
+    }
+
+    @Operation(summary = "내 프로젝트 조회", description = "현재 사용자가 참여 중인 모든 프로젝트를 조회합니다.")
+    @GetMapping("/my-projects")
+    public APIResponse<List<ProjectWithTasksResponse>> getMyProjects() {
+        Member currentMember = securityUtil.getMember();
+        List<ProjectWithTasksResponse> projects = projectService.getMyProjects(currentMember.getId());
+        return APIResponse.ok(projects);
     }
 }
 

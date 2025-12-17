@@ -14,7 +14,6 @@ import technologyaa.Devit.domain.auth.jwt.entity.Member;
 import technologyaa.Devit.domain.auth.jwt.entity.Role;
 import technologyaa.Devit.domain.auth.jwt.repository.MemberRepository;
 import technologyaa.Devit.domain.project.entity.Project;
-import technologyaa.Devit.domain.project.entity.Major;
 import technologyaa.Devit.domain.project.entity.Task;
 import technologyaa.Devit.domain.project.repository.ProjectRepository;
 import technologyaa.Devit.domain.project.repository.TaskRepository;
@@ -72,9 +71,9 @@ public class NewFeaturesIntegrationTest {
         testProject = Project.builder()
                 .title("테스트 프로젝트")
                 .content("테스트 프로젝트 내용")
-                .major(Major.BACKEND)
                 .members(new HashSet<>())
                 .build();
+        testProject.setAuthor(testMember);
         testProject.getMembers().add(testMember);
         testProject = projectRepository.save(testProject);
 

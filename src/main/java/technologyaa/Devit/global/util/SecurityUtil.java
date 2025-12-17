@@ -15,7 +15,11 @@ public class SecurityUtil {
     private final MemberRepository memberRepository;
 
     public Member getMember() {
-        Authentication auth = SecurityContextHolder.createEmptyContext().getAuthentication();
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        
+        if (auth == null || !auth.isAuthenticated() || auth.getPrincipal().equals("anonymousUser")) {
+            throw new AuthException(AuthErrorCode.UNAUTHORIZED);
+        }
 
         return memberRepository.findByUsername(auth.getName())
                 .orElseThrow(() -> new AuthException(AuthErrorCode.MEMBER_NOT_FOUND));
