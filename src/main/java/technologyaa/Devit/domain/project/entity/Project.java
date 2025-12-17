@@ -2,9 +2,13 @@ package technologyaa.Devit.domain.project.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
 import technologyaa.Devit.domain.auth.jwt.entity.Member;
 
+import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 @Entity
@@ -16,8 +20,14 @@ import java.util.Set;
 public class Project {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "project_id")
     private Long projectId;
+
+    @Column(nullable = false, columnDefinition = "TEXT")
+    private String profile;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(nullable = false)
+    private Member author;
 
     @Column(nullable = false, length = 40)
     private String title;
@@ -25,19 +35,25 @@ public class Project {
     @Column(columnDefinition = "TEXT")
     private String content;
 
-    @Enumerated(EnumType.STRING)
-    private Major major;
+    @Builder.Default
+    @Column(nullable = false)
+    private Boolean isCompleted=false;
 
-    @Column(length = 500)
-    private String profile;
+    @CreationTimestamp
+    @Column(nullable = false, updatable = false)
+    @Builder.Default
+    private LocalDateTime createAt = LocalDateTime.now();
 
-    @ManyToMany(fetch = FetchType.LAZY)
+    @Builder.Default
+    @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Task> tasks = new ArrayList<>();
+
+    @ManyToMany
     @JoinTable(
-        name = "project_member",
-        joinColumns = @JoinColumn(name = "project_id"),
-        inverseJoinColumns = @JoinColumn(name = "member_id")
+            name = "project_members",
+            joinColumns = @JoinColumn(name = "project_id"),
+            inverseJoinColumns = @JoinColumn(name = "member_id")
     )
     @Builder.Default
     private Set<Member> members = new HashSet<>();
 }
-

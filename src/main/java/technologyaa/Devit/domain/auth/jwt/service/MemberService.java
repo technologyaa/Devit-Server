@@ -47,6 +47,7 @@ public class MemberService {
                 .createdAt(date)
                 .credit(0L)
                 .role(request.role())
+                .isDeveloper(request.role() == technologyaa.Devit.domain.auth.jwt.entity.Role.ROLE_DEVELOPER)
                 .build();
         memberRepository.save(member);
         return APIResponse.ok("회원가입에 성공하셨습니다.");

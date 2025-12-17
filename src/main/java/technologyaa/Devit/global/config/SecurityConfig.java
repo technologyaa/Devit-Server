@@ -46,7 +46,7 @@ public class SecurityConfig {
                         .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
                 )
                 .authorizeHttpRequests(auth -> auth
-                                .requestMatchers("/login", "/", "/static/**", "/swagger-ui/**", "/v3/api-docs/**", "/login.html", "/signup.html", "/chat.html", "/project.html", "/index.html", "/auth/**", "/*.html", "/ws/**","/email/**").permitAll()
+                                .requestMatchers("/login", "/", "/static/**", "/swagger-ui/**", "/v3/api-docs/**", "/login.html", "/sizgnup.html", "/chat.html", "/project.html", "/index.html", "/auth/**", "/*.html", "/ws/**","/email/**").permitAll()
                                 .requestMatchers("/oauth2/**").permitAll() // OAuth 로그인 허용
                                 .requestMatchers("/api/users/me").permitAll() // 로그인 상태 확인용
                                 .requestMatchers("/projects/**").permitAll() // 프로젝트 API 접근 허용
@@ -55,7 +55,8 @@ public class SecurityConfig {
                                 .requestMatchers("/api/profile/**").authenticated()
                                 .requestMatchers("/auth/profile/**").authenticated()
                                 .requestMatchers("/projects/profile/**").authenticated()
-                        //.anyRequest().permitAll() // 임시로 모든 요청 허용 (테스트용)
+                                .requestMatchers("/developers/**").permitAll()
+//                                .anyRequest().permitAll()
                 )
                 .formLogin(AbstractHttpConfigurer::disable)
                 // OAuth 로그인 활성화
@@ -73,6 +74,7 @@ public class SecurityConfig {
                         .deleteCookies("JSESSIONID")
                 )
                 .headers(headers -> headers.frameOptions(HeadersConfigurer.FrameOptionsConfig::sameOrigin))
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .exceptionHandling(exception -> exception
                         .authenticationEntryPoint(customAuthenticationEntryPoint)
                 )
@@ -83,7 +85,7 @@ public class SecurityConfig {
     }
 
     @Bean
-    public CorsFilter corsFilter() {
+    public UrlBasedCorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
         config.addAllowedOrigin("http://localhost:5173");
         config.addAllowedOrigin("https://devit.run");
@@ -93,7 +95,12 @@ public class SecurityConfig {
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
-        return new CorsFilter(source);
+        return source;
+    }
+
+    @Bean
+    public CorsFilter corsFilter() {
+        return new CorsFilter(corsConfigurationSource());
     }
 }
 

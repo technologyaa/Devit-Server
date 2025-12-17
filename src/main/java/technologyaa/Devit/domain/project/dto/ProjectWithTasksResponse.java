@@ -38,7 +38,7 @@ public class ProjectWithTasksResponse {
                 .projectId(project.getProjectId())
                 .title(project.getTitle())
                 .content(project.getContent())
-                .major(project.getMajor() != null ? project.getMajor().toString() : null)
+                .major(null) // Project 엔티티에 major 필드가 없으므로 null 처리
                 .profile(project.getProfile())
                 .tasks(tasks.stream()
                         .map(task -> TaskResponse.builder()

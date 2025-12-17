@@ -17,8 +17,8 @@ public enum AuthErrorCode {
     MEMBER_ALREADY_EXISTS(409, "MEMBER_ALREADY_EXISTS", "이미 존재하는 사용자입니다."),
     EMAIL_ALREADY_EXISTS(409, "EMAIL_ALREADY_EXISTS", "이미 사용 중인 이메일입니다."),
     EMAIL_VERIFICATION_FAILED(400, "EMAIL_VERIFICATION_FAILED", "이메일 인증에 실패하였습니다."),
-    USER_ALREADY_EXISTS(409, "USER_ALREADY_EXISTS", "이미 존재하는 유저입니다.");
-
+    USER_ALREADY_EXISTS(409, "USER_ALREADY_EXISTS", "이미 존재하는 유저입니다."),
+    USERNAME_ALREADY_EXISTS(409, "USERNAME_ALREADY_EXISTS", "중복된 이름입니다.");
     private final int status;
     private final String code;
     private final String message;

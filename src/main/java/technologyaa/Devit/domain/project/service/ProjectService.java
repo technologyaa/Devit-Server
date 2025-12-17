@@ -1,79 +1,101 @@
 package technologyaa.Devit.domain.project.service;
 
+import jakarta.mail.search.SearchTerm;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import technologyaa.Devit.domain.auth.jwt.entity.Member;
+import technologyaa.Devit.domain.auth.jwt.repository.MemberRepository;
+import technologyaa.Devit.domain.project.dto.ProjectCreateRequest;
+import technologyaa.Devit.domain.project.dto.ProjectResponse;
+import technologyaa.Devit.domain.project.dto.ProjectUpdateRequest;
 import org.springframework.web.multipart.MultipartFile;
 import technologyaa.Devit.domain.common.APIResponse;
 import technologyaa.Devit.domain.file.service.FileStorageService;
-import technologyaa.Devit.domain.project.dto.ProjectRequest;
-import technologyaa.Devit.domain.project.dto.ProjectWithTasksResponse;
 import technologyaa.Devit.domain.project.entity.Project;
-import technologyaa.Devit.domain.project.entity.Task;
+import technologyaa.Devit.domain.project.exception.AuthorErrorCode;
+import technologyaa.Devit.domain.project.exception.AuthorException;
 import technologyaa.Devit.domain.project.exception.ProjectErrorCode;
 import technologyaa.Devit.domain.project.exception.ProjectException;
 import technologyaa.Devit.domain.project.repository.ProjectRepository;
-import technologyaa.Devit.domain.project.repository.TaskRepository;
-import technologyaa.Devit.domain.auth.jwt.entity.Member;
-import technologyaa.Devit.domain.auth.jwt.repository.MemberRepository;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import technologyaa.Devit.domain.auth.jwt.exception.AuthErrorCode;
-import technologyaa.Devit.domain.auth.jwt.exception.AuthException;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class ProjectService {
+
     private final ProjectRepository projectRepository;
-    private final TaskRepository taskRepository;
-    private final FileStorageService fileStorageService;
     private final MemberRepository memberRepository;
+    private final FileStorageService fileStorageService;
+
+    private void checkProjectAuthor(Project project, Long memberId) {
+        if (!project.getAuthor().getId().equals(memberId)) {
+            throw new SecurityException("접근 권한이 없습니다.");
+        }
+    }
 
     // create
-    public Project create(ProjectRequest request) {
-        // 현재 로그인한 사용자 조회
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        Member creator = memberRepository.findByUsername(auth.getName())
-                .orElseThrow(() -> new AuthException(AuthErrorCode.MEMBER_NOT_FOUND));
+    @Transactional
+    public Long createProject(ProjectCreateRequest request, Long authorId) {
+        Member author = memberRepository.findById(authorId)
+                .orElseThrow(() -> new AuthorException(AuthorErrorCode.AUTHOR_NOT_FOUND));
 
         Project project = Project.builder()
                 .title(request.getTitle())
                 .content(request.getContent())
-                .major(request.getMajor())
+                .author(author)
                 .build();
-        
-        // 프로젝트 생성자를 멤버에 자동 추가
-        project.getMembers().add(creator);
-        
-        return projectRepository.save(project);
+
+        project.getMembers().add(author);
+
+        Project savedProject = projectRepository.save(project);
+        return savedProject.getProjectId();
     }
 
     // read all
-    public List<Project> findAll() {
-        return projectRepository.findAll();
+    @Transactional(readOnly = true)
+    public List<ProjectResponse> findAllProjects() {
+        return projectRepository.findAll().stream()
+                .map(ProjectResponse::new)
+                .collect(Collectors.toList());
     }
 
     // read one
-    public Project findOne(Long projectId) {
-        return projectRepository.findById(projectId)
-                .orElseThrow(() -> new ProjectException(ProjectErrorCode.PROJECT_NOT_FOUND));
-    }
+        @Transactional(readOnly = true)
+        public ProjectResponse findProjectById(Long id) {
+            Project project = projectRepository.findById(id)
+                    .orElseThrow(() -> new ProjectException(ProjectErrorCode.PROJECT_NOT_FOUND));
+            return new ProjectResponse(project);
+        }
 
-    // update
-    public Project update(Long ProjectId, ProjectRequest request) {
-        Project project = projectRepository.findById(ProjectId)
-                .orElseThrow(() -> new ProjectException(ProjectErrorCode.PROJECT_NOT_FOUND));
-        project.setTitle(request.getTitle());
-        project.setContent(request.getContent());
-        project.setMajor(request.getMajor());
-        return projectRepository.save(project);
-    }
+        // update
+        @Transactional
+        public String updateProject(Long projectId, ProjectUpdateRequest request, Long memberId) {
+            Project project = projectRepository.findById(projectId)
+                    .orElseThrow(() -> new ProjectException(ProjectErrorCode.PROJECT_NOT_FOUND));
+
+            checkProjectAuthor(project, memberId);
+
+            project.setTitle(request.getTitle());
+            project.setContent(request.getContent());
+            project.setIsCompleted(request.getIsCompleted());
+
+            return "프로젝트가 수정되었습니다.";
+        }
 
     // delete
-    public void delete(Long ProjectId) {
-        projectRepository.deleteById(ProjectId);
+    @Transactional
+    public void deleteProject(Long projectId, Long memberId) {
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new ProjectException(ProjectErrorCode.PROJECT_NOT_FOUND));
+
+        checkProjectAuthor(project, memberId);
+
+        projectRepository.delete(project);
     }
 
     public APIResponse<?> uploadProjectsImage(Long id,MultipartFile file) throws IOException {
@@ -94,20 +116,12 @@ public class ProjectService {
         }
     }
 
-    public APIResponse<List<ProjectWithTasksResponse>> getMyProjects() {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        Member member = memberRepository.findByUsername(auth.getName())
-                .orElseThrow(() -> new AuthException(AuthErrorCode.MEMBER_NOT_FOUND));
 
-        List<Project> projects = projectRepository.findByMemberId(member.getId());
-        List<ProjectWithTasksResponse> projectResponses = projects.stream()
-                .map(project -> {
-                    List<Task> tasks = taskRepository.findByProject_ProjectId(project.getProjectId());
-                    return ProjectWithTasksResponse.from(project, tasks);
-                })
-                .collect(java.util.stream.Collectors.toList());
+    public Set<Member> getProjectMembers(Long projectId) {
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new RuntimeException("해당 프로젝트를 찾을 수 없습니다."));
 
-        return APIResponse.ok(projectResponses);
+        return project.getMembers();
     }
 }
 
