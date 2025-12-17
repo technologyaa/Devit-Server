@@ -76,23 +76,4 @@ public class ProfileService {
         memberRepository.delete(member);
         return APIResponse.ok(null);
     }
-
-    /** 기본 프로필 조회 (비로그인 금지) */
-    @Transactional(readOnly = true)
-    public APIResponse<ProfileResponse> getDefaultProfile() {
-        // 현재 로그인 사용자 가져오기
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-
-        if (auth == null || !auth.isAuthenticated() || auth.getPrincipal().equals("anonymousUser")) {
-            // 비로그인 상태이면 예외
-            throw new AuthException(AuthErrorCode.UNAUTHORIZED);
-        }
-
-        // 로그인 된 회원 가져오기
-        String username = auth.getName();
-        Member member = memberRepository.findByUsername(username)
-                .orElseThrow(() -> new AuthException(AuthErrorCode.MEMBER_NOT_FOUND));
-
-        return APIResponse.ok(ProfileResponse.of(member));
-    }
 }
