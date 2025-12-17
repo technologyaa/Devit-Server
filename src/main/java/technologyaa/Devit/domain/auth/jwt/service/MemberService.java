@@ -98,7 +98,7 @@ public class MemberService {
         }
     }
 
-    public boolean checkUsername(SignOutRequest request) {
+    public boolean checkUsername(CheckUsernameRequest request) {
         if(memberRepository.existsByUsername(request.username())) {
             throw new AuthException(AuthErrorCode.MEMBER_ALREADY_EXISTS);
         }

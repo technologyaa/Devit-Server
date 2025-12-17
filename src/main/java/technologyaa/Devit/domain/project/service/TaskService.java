@@ -6,6 +6,8 @@ import org.springframework.transaction.annotation.Transactional;
 import technologyaa.Devit.domain.project.dto.TaskRequest;
 import technologyaa.Devit.domain.project.entity.Project;
 import technologyaa.Devit.domain.project.entity.Task;
+import technologyaa.Devit.domain.project.exception.ProjectErrorCode;
+import technologyaa.Devit.domain.project.exception.ProjectException;
 import technologyaa.Devit.domain.project.repository.ProjectRepository;
 import technologyaa.Devit.domain.project.repository.TaskRepository;
 
@@ -20,7 +22,7 @@ public class TaskService {
 
     public Task create(Long projectId, TaskRequest request) {
         Project project = projectRepository.findById(projectId)
-                .orElseThrow(() -> new RuntimeException("해당 프로젝트를 찾을 수 없습니다."));
+                .orElseThrow(() -> new ProjectException(ProjectErrorCode.PROJECT_NOT_FOUND));
 
         Task task = Task.builder()
                 .project(project)
@@ -38,12 +40,12 @@ public class TaskService {
 
     public Task findOne(Long taskId) {
         return taskRepository.findById(taskId)
-                .orElseThrow(() -> new RuntimeException("해당 업무를 찾을 수 없습니다."));
+                .orElseThrow(() -> new ProjectException(ProjectErrorCode.PROJECT_NOT_FOUND));
     }
 
     public Task update(Long taskId, TaskRequest request) {
         Task task = taskRepository.findById(taskId)
-                .orElseThrow(() -> new RuntimeException("해당 업무를 찾을 수 없습니다."));
+                .orElseThrow(() -> new ProjectException(ProjectErrorCode.PROJECT_NOT_FOUND));
 
         task.setTitle(request.getTitle());
         task.setDescription(request.getDescription());

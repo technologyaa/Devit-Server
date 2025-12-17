@@ -33,11 +33,20 @@ public class ProjectService {
 
     // create
     public Project create(ProjectRequest request) {
+        // 현재 로그인한 사용자 조회
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        Member creator = memberRepository.findByUsername(auth.getName())
+                .orElseThrow(() -> new AuthException(AuthErrorCode.MEMBER_NOT_FOUND));
+
         Project project = Project.builder()
                 .title(request.getTitle())
                 .content(request.getContent())
                 .major(request.getMajor())
                 .build();
+        
+        // 프로젝트 생성자를 멤버에 자동 추가
+        project.getMembers().add(creator);
+        
         return projectRepository.save(project);
     }
 
@@ -49,13 +58,13 @@ public class ProjectService {
     // read one
     public Project findOne(Long projectId) {
         return projectRepository.findById(projectId)
-                .orElseThrow(() -> new RuntimeException("해당 프로젝트를 찾을 수 없습니다."));
+                .orElseThrow(() -> new ProjectException(ProjectErrorCode.PROJECT_NOT_FOUND));
     }
 
     // update
     public Project update(Long ProjectId, ProjectRequest request) {
         Project project = projectRepository.findById(ProjectId)
-                .orElseThrow(() -> new RuntimeException("해당 프로젝트를 찾을 수 없습니다."));
+                .orElseThrow(() -> new ProjectException(ProjectErrorCode.PROJECT_NOT_FOUND));
         project.setTitle(request.getTitle());
         project.setContent(request.getContent());
         project.setMajor(request.getMajor());

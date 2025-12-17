@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.transaction.annotation.Transactional;
 import technologyaa.Devit.domain.project.dto.ProjectRequest;
@@ -16,6 +17,9 @@ import technologyaa.Devit.domain.project.entity.TaskFile;
 import technologyaa.Devit.domain.project.entity.Task.TaskStatus;
 import technologyaa.Devit.domain.project.repository.TaskFileRepository;
 import technologyaa.Devit.domain.project.repository.TaskRepository;
+import technologyaa.Devit.domain.auth.jwt.entity.Member;
+import technologyaa.Devit.domain.auth.jwt.entity.Role;
+import technologyaa.Devit.domain.auth.jwt.repository.MemberRepository;
 import technologyaa.Devit.domain.project.service.ProjectService;
 import technologyaa.Devit.domain.project.service.TaskFileService;
 import technologyaa.Devit.domain.project.service.TaskService;
@@ -49,6 +53,9 @@ public class TaskFileIntegrationTest {
     @Autowired
     private TaskFileRepository taskFileRepository;
 
+    @Autowired
+    private MemberRepository memberRepository;
+
     @BeforeEach
     public void setUp() throws Exception {
         // 테스트 업로드 디렉토리 생성
@@ -56,9 +63,24 @@ public class TaskFileIntegrationTest {
         if (!Files.exists(testUploadDir)) {
             Files.createDirectories(testUploadDir);
         }
+
+        // 테스트용 유저 생성
+        if (!memberRepository.existsByUsername("testuser")) {
+            Member testMember = Member.builder()
+                    .username("testuser")
+                    .password("encodedPassword")
+                    .email("test@example.com")
+                    .createdAt("2024-01-01 00:00:00")
+                    .credit(0L)
+                    .role(Role.ROLE_USER)
+                    .isDeveloper(false)
+                    .build();
+            memberRepository.save(testMember);
+        }
     }
 
     @Test
+    @WithMockUser(username = "testuser")
     public void testCreateTaskAndUploadFile() throws Exception {
         // 1. 프로젝트 생성
         ProjectRequest projectRequest = new ProjectRequest();
@@ -105,6 +127,7 @@ public class TaskFileIntegrationTest {
     }
 
     @Test
+    @WithMockUser(username = "testuser")
     public void testFileDownload() throws Exception {
         // 프로젝트 생성
         ProjectRequest projectRequest = new ProjectRequest();
@@ -140,6 +163,7 @@ public class TaskFileIntegrationTest {
     }
 
     @Test
+    @WithMockUser(username = "testuser")
     public void testGetFilesByTaskId() throws Exception {
         // 프로젝트 생성
         ProjectRequest projectRequest = new ProjectRequest();
@@ -180,6 +204,7 @@ public class TaskFileIntegrationTest {
     }
 
     @Test
+    @WithMockUser(username = "testuser")
     public void testDeleteFile() throws Exception {
         // 프로젝트 생성
         ProjectRequest projectRequest = new ProjectRequest();
@@ -218,6 +243,7 @@ public class TaskFileIntegrationTest {
     }
 
     @Test
+    @WithMockUser(username = "testuser")
     public void testTaskCRUD() throws Exception {
         // 프로젝트 생성
         ProjectRequest projectRequest = new ProjectRequest();
@@ -253,7 +279,7 @@ public class TaskFileIntegrationTest {
 
         // 업무 삭제
         taskService.delete(task.getTaskId());
-        assertThrows(RuntimeException.class, () -> {
+        assertThrows(technologyaa.Devit.domain.project.exception.ProjectException.class, () -> {
             taskService.findOne(task.getTaskId());
         });
     }
