@@ -100,5 +100,12 @@ public class ProjectService {
 
         return APIResponse.ok(projectResponses);
     }
+
+    public List<Member> getProjectMembers(Long projectId) {
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new ProjectException(ProjectErrorCode.PROJECT_NOT_FOUND));
+
+        return List.copyOf(project.getMembers());
+    }
 }
 
