@@ -46,7 +46,6 @@ public class SecurityConfig {
                         .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
                 )
                 .authorizeHttpRequests(auth -> auth
-                                .requestMatchers("/login", "/", "/static/**", "/swagger-ui/**", "/v3/api-docs/**", "/login.html", "/signup.html", "/chat.html", "/project.html", "/index.html", "/auth/**", "/*.html", "/ws/**","/email/**").permitAll()
                                 .requestMatchers("/oauth2/**").permitAll() // OAuth 로그인 허용
                                 .requestMatchers("/api/users/me").permitAll() // 로그인 상태 확인용
                                 .requestMatchers("/projects/**").permitAll() // 프로젝트 API 접근 허용
@@ -55,7 +54,7 @@ public class SecurityConfig {
                                 .requestMatchers("/api/profile/**").authenticated()
                                 .requestMatchers("/auth/profile/**").authenticated()
                                 .requestMatchers("/projects/profile/**").authenticated()
-                        //.anyRequest().permitAll() // 임시로 모든 요청 허용 (테스트용)
+                                .anyRequest().authenticated()
                 )
                 .formLogin(AbstractHttpConfigurer::disable)
                 // OAuth 로그인 활성화
