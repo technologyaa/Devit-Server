@@ -70,5 +70,11 @@ public class MemberController {
     public APIResponse<?> getAllMembers() {
         return memberService.getAllMembers();
     }
+
+    @Operation(summary = "개발자 목록 조회", description = "역할(role)이 개발자인 모든 유저의 목록을 조회합니다.")
+    @GetMapping("/developers")
+    public APIResponse<?> getDevelopers() {
+        return memberService.getDevelopers();
+    }
 }
 

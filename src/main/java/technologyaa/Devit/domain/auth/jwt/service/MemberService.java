@@ -123,5 +123,13 @@ public class MemberService {
                 .collect(java.util.stream.Collectors.toList());
         return APIResponse.ok(memberResponses);
     }
+
+    public APIResponse<List<MemberResponse>> getDevelopers() {
+        List<Member> developers = memberRepository.findByRole(technologyaa.Devit.domain.auth.jwt.entity.Role.ROLE_DEVELOPER);
+        List<MemberResponse> developerResponses = developers.stream()
+                .map(MemberResponse::from)
+                .collect(java.util.stream.Collectors.toList());
+        return APIResponse.ok(developerResponses);
+    }
 }
 
