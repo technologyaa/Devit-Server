@@ -7,7 +7,9 @@ import technologyaa.Devit.domain.auth.jwt.entity.Member;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Entity
 @Getter
@@ -44,4 +46,13 @@ public class Project {
     @Builder.Default
     @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Task> tasks = new ArrayList<>();
+
+    @ManyToMany
+    @JoinTable(
+            name = "project_members",
+            joinColumns = @JoinColumn(name = "project_id"),
+            inverseJoinColumns = @JoinColumn(name = "member_id")
+    )
+    @Builder.Default
+    private Set<Member> members = new HashSet<>();
 }

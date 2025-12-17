@@ -1,5 +1,6 @@
 package technologyaa.Devit.domain.project.service;
 
+import jakarta.mail.search.SearchTerm;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,6 +21,7 @@ import technologyaa.Devit.domain.project.repository.ProjectRepository;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -47,6 +49,8 @@ public class ProjectService {
                 .content(request.getContent())
                 .author(author)
                 .build();
+
+        project.getMembers().add(author);
 
         Project savedProject = projectRepository.save(project);
         return savedProject.getProjectId();
@@ -110,6 +114,14 @@ public class ProjectService {
         } catch (IOException e) {
             throw new RuntimeException("이미지 업로드 실패: " + e.getMessage());
         }
+    }
+
+
+    public Set<Member> getProjectMembers(Long projectId) {
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new RuntimeException("해당 프로젝트를 찾을 수 없습니다."));
+
+        return project.getMembers();
     }
 }
 

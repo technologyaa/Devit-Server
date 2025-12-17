@@ -18,6 +18,7 @@ import technologyaa.Devit.domain.project.service.ProjectService;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Set;
 
 @Tag(name = "프로젝트 (Project)", description = "프로젝트 CRUD API")
 @RestController
@@ -80,6 +81,13 @@ public class ProjectController {
             @PathVariable("file")MultipartFile file
     ) throws IOException {
         return projectService.uploadProjectsImage(id, file);
+    }
+
+    @Operation(summary = "프로젝트 참여 멤버 조회", description = "특정 프로젝트에 참여 중인 모든 멤버를 조회합니다.")
+    @GetMapping("/{projectId}/members")
+    public ResponseEntity<Set<Member>> getProjectMembers(@PathVariable Long projectId) {
+        Set<Member> members = projectService.getProjectMembers(projectId);
+        return ResponseEntity.ok(members);
     }
 }
 
