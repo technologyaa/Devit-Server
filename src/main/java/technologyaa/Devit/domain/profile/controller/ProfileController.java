@@ -37,9 +37,4 @@ public class ProfileController {
         return profileService.deleteProfile();
     }
 
-    /** 기본 프로필 */
-    @GetMapping("/default")
-    public APIResponse<?> getDefaultProfile() {
-        return profileService.getDefaultProfile();
-    }
 }
