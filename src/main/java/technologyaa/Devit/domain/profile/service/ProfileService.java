@@ -62,6 +62,7 @@ public class ProfileService {
             member.setUsername(request.username());
         }
 
+        memberRepository.save(member);
 
         return APIResponse.ok(ProfileResponse.of(member));
     }
