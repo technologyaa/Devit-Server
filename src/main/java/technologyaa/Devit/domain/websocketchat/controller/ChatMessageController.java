@@ -14,6 +14,7 @@ import java.util.List;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/chat/messages")
+@CrossOrigin(origins = {"http://localhost:5173", "https://devit.run"}, allowCredentials = "true")
 public class ChatMessageController {
 
     private final ChatMessageService chatMessageService;
