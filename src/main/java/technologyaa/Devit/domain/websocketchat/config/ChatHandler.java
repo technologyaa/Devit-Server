@@ -102,30 +102,35 @@ public class ChatHandler extends TextWebSocketHandler {
             }
 
             // 메시지 저장 로직:
-            // 1. roomId가 있으면 채팅방 메시지로 저장 (receiver 무시)
+            // 1. roomId가 있으면 채팅방 메시지로 저장 (반드시 room 객체 설정 필요)
             // 2. roomId가 없고 receiver가 있으면 1:1 메시지로 저장
-            // 3. 둘 다 있으면 채팅방 메시지 우선
+            // 3. 둘 다 없으면 브로드캐스트 (저장하지 않음)
             if (chatMessage.getRoomId() != null) {
-                // 채팅방 메시지: roomId를 통해 채팅방 조회
-                ChatRoom room = chatRoomRepository.findById(chatMessage.getRoomId()).orElse(null);
-                if (room != null) {
-                    chatMessage.setRoom(room);
-                    chatMessage.setReceiver(null); // 채팅방 메시지이므로 receiver는 null 처리
-                    log.debug("채팅방 메시지로 처리. roomId: {}", chatMessage.getRoomId());
-                } else {
-                    log.warn("채팅방을 찾을 수 없습니다. roomId: {}", chatMessage.getRoomId());
-                }
+                // 채팅방 메시지: roomId를 통해 채팅방 조회 (반드시 존재해야 함)
+                ChatRoom room = chatRoomRepository.findById(chatMessage.getRoomId())
+                    .orElseThrow(() -> new IllegalArgumentException("채팅방을 찾을 수 없습니다. roomId: " + chatMessage.getRoomId()));
+                
+                // room 객체를 설정하여 DB에 room_id로 저장되도록 함
+                chatMessage.setRoom(room);
+                chatMessage.setReceiver(null); // 채팅방 메시지이므로 receiver는 null 처리
+                log.info("채팅방 메시지로 처리. roomId: {}, roomName: {}", chatMessage.getRoomId(), room.getName());
             } else if (chatMessage.getReceiver() != null && !chatMessage.getReceiver().trim().isEmpty()) {
                 // 1:1 메시지: receiver 사용
-                log.debug("1:1 메시지로 처리. receiver: {}", chatMessage.getReceiver());
+                chatMessage.setRoom(null); // 명시적으로 null 설정
+                log.info("1:1 메시지로 처리. receiver: {}", chatMessage.getReceiver());
             } else {
-                // 둘 다 없으면 브로드캐스트
-                log.debug("브로드캐스트 메시지로 처리");
+                // 둘 다 없으면 브로드캐스트 (실시간 전용, DB에 저장하지 않음)
+                log.debug("브로드캐스트 메시지로 처리 (DB 저장 안 함)");
+                // 브로드캐스트는 실시간 전송만 하고 DB에 저장하지 않음
+                sendMessage(chatMessage, session);
+                return; // DB 저장하지 않고 종료
             }
 
-            // 데이터베이스에 저장
+            // 데이터베이스에 저장 (room 객체가 설정된 경우에만 room_id가 저장됨)
             ChatMessage savedMessage = chatMessageRepository.save(chatMessage);
-            log.info("메시지 저장 완료. ID: {}, Room: {}", savedMessage.getId(), 
+            log.info("메시지 저장 완료. ID: {}, Room: {}, RoomId: {}", 
+                    savedMessage.getId(), 
+                    savedMessage.getRoom() != null ? savedMessage.getRoom().getName() : "null",
                     savedMessage.getRoom() != null ? savedMessage.getRoom().getId() : "null");
 
             // 메시지 전송 (채팅방 또는 1:1)

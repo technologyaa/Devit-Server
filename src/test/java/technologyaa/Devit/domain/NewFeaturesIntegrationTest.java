@@ -21,11 +21,16 @@ import technologyaa.Devit.domain.project.repository.ProjectRepository;
 import technologyaa.Devit.domain.project.repository.TaskRepository;
 import technologyaa.Devit.domain.project.service.ProjectService;
 import technologyaa.Devit.domain.websocketchat.dto.ChatMessage;
+import technologyaa.Devit.domain.websocketchat.entity.ChatRoom;
 import technologyaa.Devit.domain.websocketchat.repository.ChatMessageRepository;
+import technologyaa.Devit.domain.websocketchat.repository.ChatRoomRepository;
 
 import java.time.LocalDateTime;
 import java.util.HashSet;
+import java.util.Set;
 
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -42,6 +47,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
     "spring.jwt.secret=test-secret-key-for-testing-purposes-only-minimum-length-required",
     "spring.jwt.access-token-expiration=3600000",
     "spring.jwt.refresh-token-expiration=86400000",
+    "spring.mail.username=test@example.com",
+    "spring.mail.password=test-password",
     "spring.data.redis.host=localhost",
     "spring.data.redis.port=6379",
     "spring.security.oauth2.client.registration.google.client-id=test-client-id",
@@ -65,6 +72,9 @@ public class NewFeaturesIntegrationTest {
 
     @Autowired
     private ChatMessageRepository chatMessageRepository;
+
+    @Autowired
+    private ChatRoomRepository chatRoomRepository;
 
     @Autowired
     private ObjectMapper objectMapper;
@@ -177,6 +187,85 @@ public class NewFeaturesIntegrationTest {
                 .andExpect(jsonPath("$.data.length()").value(1))
                 .andExpect(jsonPath("$.data[0].username").value("otheruser"))
                 .andExpect(jsonPath("$.data[0].email").value("other@example.com"));
+    }
+
+    @Test
+    @WithMockUser(username = "testuser")
+    void testChatRoomMessageSaveAndRetrieve() throws Exception {
+        // 1. 채팅방 생성 (멤버 설정)
+        Set<Member> members = new HashSet<>();
+        members.add(testMember);
+        ChatRoom testRoom = ChatRoom.builder()
+                .name("테스트 채팅방")
+                .description("테스트용 채팅방")
+                .type(ChatRoom.RoomType.GROUP)
+                .createdAt(LocalDateTime.now())
+                .members(members)
+                .build();
+        testRoom = chatRoomRepository.save(testRoom);
+        Long roomId = testRoom.getId();
+        
+        // 저장 후 다시 조회하여 members가 제대로 설정되었는지 확인
+        ChatRoom savedRoom = chatRoomRepository.findById(roomId).orElseThrow();
+        assertNotNull(savedRoom.getMembers());
+        assertFalse(savedRoom.getMembers().isEmpty());
+
+        // 2. 채팅방에 메시지 저장 (room 객체를 설정하여 room_id가 저장되도록)
+        ChatMessage chatMessage1 = new ChatMessage();
+        chatMessage1.setSender("testuser");
+        chatMessage1.setContent("첫 번째 메시지");
+        chatMessage1.setType(ChatMessage.MessageType.TALK);
+        chatMessage1.setTimestamp(LocalDateTime.now());
+        chatMessage1.setRoom(testRoom); // room 객체 설정
+        chatMessage1.setReceiver(null); // 채팅방 메시지이므로 receiver는 null
+        ChatMessage savedMessage1 = chatMessageRepository.save(chatMessage1);
+
+        ChatMessage chatMessage2 = new ChatMessage();
+        chatMessage2.setSender("testuser");
+        chatMessage2.setContent("두 번째 메시지");
+        chatMessage2.setType(ChatMessage.MessageType.TALK);
+        chatMessage2.setTimestamp(LocalDateTime.now());
+        chatMessage2.setRoom(testRoom); // room 객체 설정
+        chatMessage2.setReceiver(null);
+        ChatMessage savedMessage2 = chatMessageRepository.save(chatMessage2);
+
+        // 3. 저장된 메시지가 room과 연결되어 있는지 확인
+        assertNotNull(savedMessage1.getId());
+        assertNotNull(savedMessage1.getRoom());
+        assertEquals(roomId, savedMessage1.getRoom().getId());
+        assertEquals(roomId, savedMessage1.getRoomId());
+
+        assertNotNull(savedMessage2.getId());
+        assertNotNull(savedMessage2.getRoom());
+        assertEquals(roomId, savedMessage2.getRoom().getId());
+
+        // 4. roomId로 메시지 조회
+        var messagesByRoom = chatMessageRepository.findByRoom_IdOrderByTimestampAsc(roomId);
+        assertNotNull(messagesByRoom);
+        assertTrue(messagesByRoom.size() >= 2);
+        
+        // roomId로 조회한 메시지들이 모두 해당 채팅방의 메시지인지 확인
+        boolean foundMessage1 = messagesByRoom.stream()
+                .anyMatch(m -> m.getId().equals(savedMessage1.getId()) && m.getContent().equals("첫 번째 메시지"));
+        boolean foundMessage2 = messagesByRoom.stream()
+                .anyMatch(m -> m.getId().equals(savedMessage2.getId()) && m.getContent().equals("두 번째 메시지"));
+        
+        assertTrue(foundMessage1, "첫 번째 메시지가 roomId로 조회되어야 함");
+        assertTrue(foundMessage2, "두 번째 메시지가 roomId로 조회되어야 함");
+
+        // 5. roomId로 조회한 메시지들이 모두 roomId를 가지고 있는지 확인
+        for (ChatMessage msg : messagesByRoom) {
+            assertNotNull(msg.getRoomId(), "메시지의 roomId는 null이 아니어야 함");
+            assertEquals(roomId, msg.getRoomId(), "메시지의 roomId가 올바르게 저장되어야 함");
+            assertNotNull(msg.getRoom(), "메시지의 room 객체는 null이 아니어야 함");
+            assertEquals(roomId, msg.getRoom().getId(), "메시지의 room.id가 올바르게 저장되어야 함");
+        }
+        
+        // 6. 테스트 결과 요약: roomId로 메시지가 저장되고 조회되는지 확인 완료
+        System.out.println("✅ 채팅방 메시지 저장 및 조회 테스트 성공:");
+        System.out.println("   - 메시지가 room 객체와 함께 저장됨");
+        System.out.println("   - roomId로 메시지 조회 가능");
+        System.out.println("   - 저장된 메시지 개수: " + messagesByRoom.size());
     }
 }
 

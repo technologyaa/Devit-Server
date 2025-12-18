@@ -36,7 +36,7 @@ public class ChatMessageService {
         Member member = memberRepository.findByUsername(auth.getName())
                 .orElseThrow(() -> new AuthException(AuthErrorCode.MEMBER_NOT_FOUND));
 
-        ChatRoom room = chatRoomRepository.findById(roomId)
+        ChatRoom room = chatRoomRepository.findByIdWithMembers(roomId)
                 .orElseThrow(() -> new RuntimeException("채팅방을 찾을 수 없습니다."));
 
         // 채팅방 멤버 확인
