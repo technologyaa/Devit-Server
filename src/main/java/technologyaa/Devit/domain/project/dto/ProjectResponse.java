@@ -18,8 +18,16 @@ public class ProjectResponse {
     private String content;
     private Boolean isCompleted;
     private LocalDateTime createAt;
+    
+    // 프론트엔드 호환성을 위한 필드
+    private String thumbnail;  // profile 필드의 별칭
+    private String major;       // author의 major (Developer에서 가져옴)
+    private String owner;       // authorName의 별칭
+    private LocalDateTime createdAt;  // createAt의 별칭
+    private LocalDateTime updatedAt;  // createAt 사용 (updatedAt 필드가 없을 경우)
 
     public static ProjectResponse from(Project project) {
+        LocalDateTime updatedAt = project.getUpdatedAt() != null ? project.getUpdatedAt() : project.getCreateAt();
         return ProjectResponse.builder()
                 .projectId(project.getProjectId())
                 .authorId(project.getAuthor().getId())
@@ -28,6 +36,28 @@ public class ProjectResponse {
                 .content(project.getContent())
                 .isCompleted(project.getIsCompleted())
                 .createAt(project.getCreateAt())
+                .thumbnail(project.getProfile())
+                .owner(project.getAuthor().getUsername())
+                .createdAt(project.getCreateAt())
+                .updatedAt(updatedAt)
+                .build();
+    }
+    
+    public static ProjectResponse from(Project project, String major) {
+        LocalDateTime updatedAt = project.getUpdatedAt() != null ? project.getUpdatedAt() : project.getCreateAt();
+        return ProjectResponse.builder()
+                .projectId(project.getProjectId())
+                .authorId(project.getAuthor().getId())
+                .authorName(project.getAuthor().getUsername())
+                .title(project.getTitle())
+                .content(project.getContent())
+                .isCompleted(project.getIsCompleted())
+                .createAt(project.getCreateAt())
+                .thumbnail(project.getProfile())
+                .major(major)
+                .owner(project.getAuthor().getUsername())
+                .createdAt(project.getCreateAt())
+                .updatedAt(updatedAt)
                 .build();
     }
 }

@@ -1,6 +1,5 @@
 package technologyaa.Devit.domain.project.service;
 
-import jakarta.mail.search.SearchTerm;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,7 +26,6 @@ import technologyaa.Devit.domain.project.repository.TaskRepository;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -73,27 +71,35 @@ public class ProjectService {
     }
 
     // read one
-        @Transactional(readOnly = true)
-        public ProjectResponse findProjectById(Long id) {
-            Project project = projectRepository.findByIdWithAuthor(id)
-                    .orElseThrow(() -> new ProjectException(ProjectErrorCode.PROJECT_NOT_FOUND));
-            return ProjectResponse.from(project);
+    @Transactional(readOnly = true)
+    public ProjectResponse findProjectById(Long id) {
+        Project project = projectRepository.findByIdWithAuthor(id)
+                .orElseThrow(() -> new ProjectException(ProjectErrorCode.PROJECT_NOT_FOUND));
+        
+        // author의 major 가져오기
+        String major = null;
+        Developer developer = developerRepository.findById(project.getAuthor().getId()).orElse(null);
+        if (developer != null && developer.getMajor() != null) {
+            major = developer.getMajor().toString();
         }
+        
+        return ProjectResponse.from(project, major);
+    }
 
-        // update
-        @Transactional
-        public String updateProject(Long projectId, ProjectUpdateRequest request, Long memberId) {
-            Project project = projectRepository.findById(projectId)
-                    .orElseThrow(() -> new ProjectException(ProjectErrorCode.PROJECT_NOT_FOUND));
+    // update
+    @Transactional
+    public String updateProject(Long projectId, ProjectUpdateRequest request, Long memberId) {
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new ProjectException(ProjectErrorCode.PROJECT_NOT_FOUND));
 
-            checkProjectAuthor(project, memberId);
+        checkProjectAuthor(project, memberId);
 
-            project.setTitle(request.getTitle());
-            project.setContent(request.getContent());
-            project.setIsCompleted(request.getIsCompleted());
+        project.setTitle(request.getTitle());
+        project.setContent(request.getContent());
+        project.setIsCompleted(request.getIsCompleted());
 
-            return "프로젝트가 수정되었습니다.";
-        }
+        return "프로젝트가 수정되었습니다.";
+    }
 
     // delete
     @Transactional
