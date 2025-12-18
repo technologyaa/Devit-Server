@@ -1,10 +1,14 @@
 package technologyaa.Devit.domain.project.service;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import technologyaa.Devit.domain.auth.jwt.dto.response.MemberResponse;
 import technologyaa.Devit.domain.auth.jwt.entity.Member;
+import technologyaa.Devit.domain.auth.jwt.exception.AuthErrorCode;
+import technologyaa.Devit.domain.auth.jwt.exception.AuthException;
 import technologyaa.Devit.domain.auth.jwt.repository.MemberRepository;
 import technologyaa.Devit.domain.developer.entity.Developer;
 import technologyaa.Devit.domain.developer.repository.DeveloperRepository;
@@ -72,7 +76,7 @@ public class ProjectService {
             log.info("프로젝트 목록 조회 시작");
             List<Project> projects = projectRepository.findAllWithAuthor();
             log.info("조회된 프로젝트 수: {}", projects.size());
-            
+
             // 트랜잭션 내에서 모든 데이터를 로드하여 변환
             List<ProjectResponse> result = new ArrayList<>();
             for (Project project : projects) {
@@ -81,13 +85,13 @@ public class ProjectService {
                         log.warn("null 프로젝트 발견, 건너뜀");
                         continue;
                     }
-                    
+
                     // 각 프로젝트의 author가 제대로 로드되었는지 확인
                     if (project.getAuthor() == null) {
                         log.warn("프로젝트 author가 null입니다 - projectId: {}, 건너뜀", project.getProjectId());
                         continue;
                     }
-                    
+
                     // author의 username을 미리 호출하여 lazy loading 트리거 (JOIN FETCH로 이미 로드되어 있어야 함)
                     try {
                         project.getAuthor().getUsername();
@@ -95,16 +99,16 @@ public class ProjectService {
                         log.error("author 접근 중 오류 발생 - projectId: {}", project.getProjectId(), e);
                         continue;
                     }
-                    
+
                     result.add(ProjectResponse.from(project));
                 } catch (Exception e) {
-                    log.error("프로젝트 변환 중 오류 발생 - projectId: {}", 
+                    log.error("프로젝트 변환 중 오류 발생 - projectId: {}",
                             project != null ? project.getProjectId() : "unknown", e);
                     // 개별 프로젝트 변환 실패 시 해당 프로젝트만 건너뛰고 계속 진행
                     continue;
                 }
             }
-            
+
             log.info("변환된 프로젝트 수: {}", result.size());
             return result;
         } catch (Exception e) {
@@ -118,14 +122,14 @@ public class ProjectService {
     public ProjectResponse findProjectById(Long id) {
         Project project = projectRepository.findByIdWithAuthor(id)
                 .orElseThrow(() -> new ProjectException(ProjectErrorCode.PROJECT_NOT_FOUND));
-        
+
         // author의 major 가져오기
         String major = null;
         Developer developer = developerRepository.findById(project.getAuthor().getId()).orElse(null);
         if (developer != null && developer.getMajor() != null) {
             major = developer.getMajor().toString();
         }
-        
+
         return ProjectResponse.from(project, major);
     }
 
@@ -189,7 +193,8 @@ public class ProjectService {
     }
 
     @Transactional(readOnly = true)
-    public List<ProjectWithTasksResponse> getMyProjects(Long memberId) {
+    public List<ProjectWithTasksResponse> getMyProjects() {
+        Long memberId = getCurrentMember().getId();
         List<Project> projects = projectRepository.findByMemberId(memberId);
         return projects.stream()
                 .map(project -> {
@@ -204,6 +209,18 @@ public class ProjectService {
         return projectRepository.findRecommendedProjects().stream()
                 .map(ProjectResponse::from)
                 .collect(Collectors.toList());
+    }
+
+    private Member getCurrentMember() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+
+        if (auth == null || !auth.isAuthenticated() || auth.getPrincipal().equals("anonymousUser")) {
+            throw new AuthException(AuthErrorCode.UNAUTHORIZED);
+        }
+
+        String username = auth.getName();
+        return memberRepository.findByUsername(username)
+                .orElseThrow(() -> new AuthException(AuthErrorCode.MEMBER_NOT_FOUND));
     }
 }
 

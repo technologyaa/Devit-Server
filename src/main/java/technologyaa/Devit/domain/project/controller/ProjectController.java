@@ -167,8 +167,7 @@ public class ProjectController {
     @Operation(summary = "내 프로젝트 조회", description = "현재 사용자가 참여 중인 모든 프로젝트를 조회합니다.")
     @GetMapping("/my-projects")
     public APIResponse<List<ProjectWithTasksResponse>> getMyProjects() {
-        Member currentMember = securityUtil.getMember();
-        List<ProjectWithTasksResponse> projects = projectService.getMyProjects(currentMember.getId());
+        List<ProjectWithTasksResponse> projects = projectService.getMyProjects();
         return APIResponse.ok(projects);
     }
 }

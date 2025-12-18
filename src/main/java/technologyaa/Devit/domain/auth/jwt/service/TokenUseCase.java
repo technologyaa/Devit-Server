@@ -33,7 +33,7 @@ public class TokenUseCase {
 
         Cookie cookie = new Cookie("accessToken", accessToken);
         cookie.setPath("/");
-        cookie.setHttpOnly(true);
+        cookie.setHttpOnly(false);
         cookie.setMaxAge(86400);
         response.addCookie(cookie);
 
