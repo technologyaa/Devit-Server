@@ -93,6 +93,27 @@ public class GlobalExceptionHandler {
                 .body(new APIResponse<>(HttpStatus.BAD_REQUEST.value(), errors));
     }
 
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<APIResponse<ErrorResponse>> handleIllegalArgumentException(IllegalArgumentException e) {
+        log.error("IllegalArgumentException: {}", e.getMessage());
+        
+        // 채팅방 관련 메시지인 경우 404로 처리
+        String message = e.getMessage();
+        HttpStatus status = HttpStatus.BAD_REQUEST;
+        String code = "BAD_REQUEST";
+        
+        if (message != null && (message.contains("채팅방을 찾을 수 없습니다") || message.contains("채팅방"))) {
+            status = HttpStatus.NOT_FOUND;
+            code = "CHAT_ROOM_NOT_FOUND";
+        }
+
+        ErrorResponse errorResponse = ErrorResponse.of(code, message != null ? message : "잘못된 요청입니다.");
+
+        return ResponseEntity
+                .status(status)
+                .body(new APIResponse<>(status.value(), errorResponse));
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<APIResponse<ErrorResponse>> handleException(Exception e) {
         log.error("Unexpected error occurred: ", e);

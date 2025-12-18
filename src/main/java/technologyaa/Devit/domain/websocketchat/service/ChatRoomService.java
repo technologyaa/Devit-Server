@@ -295,33 +295,39 @@ public class ChatRoomService {
 
     /**
      * 채팅방 나가기 (현재 로그인한 사용자가 채팅방에서 나감)
+     * 마지막 멤버가 나가면 채팅방도 삭제됩니다.
      */
     public APIResponse<Void> leaveRoom(Long roomId) {
         try {
-            log.info("채팅방 나가기 요청. roomId: {}", roomId);
+            log.info("채팅방 나가기 요청 시작. roomId: {}", roomId);
             
+            // 현재 로그인한 사용자 조회
             Member currentMember = securityUtil.getMember();
-            log.debug("현재 사용자: {} (ID: {})", currentMember.getUsername(), currentMember.getId());
+            Long currentMemberId = currentMember.getId();
+            log.info("채팅방 나가기 요청 파라미터 - roomId: {}, userId: {}, username: {}", 
+                    roomId, currentMemberId, currentMember.getUsername());
             
+            // 채팅방 조회
             ChatRoom room = chatRoomRepository.findByIdWithMembers(roomId)
                     .orElseThrow(() -> {
-                        log.error("채팅방을 찾을 수 없습니다. roomId: {}", roomId);
+                        log.error("채팅방을 찾을 수 없습니다. roomId: {}, userId: {}", roomId, currentMemberId);
                         return new IllegalArgumentException("채팅방을 찾을 수 없습니다.");
                     });
 
-            log.debug("채팅방 조회 완료. roomId: {}, 멤버 수: {}", roomId, room.getMembers() != null ? room.getMembers().size() : 0);
+            log.debug("채팅방 조회 완료. roomId: {}, roomName: {}, 멤버 수: {}", 
+                    roomId, room.getName(), room.getMembers() != null ? room.getMembers().size() : 0);
 
-            // 현재 사용자가 채팅방에 속해있는지 확인 및 제거
-            Long currentMemberId = currentMember.getId();
+            // 현재 사용자가 채팅방에 속해있는지 확인
             boolean wasMember = room.getMembers() != null && 
                                room.getMembers().stream().anyMatch(m -> m.getId().equals(currentMemberId));
             
             if (!wasMember) {
-                log.error("채팅방 멤버가 아닙니다. roomId: {}, memberId: {}", roomId, currentMemberId);
+                log.error("채팅방 멤버가 아닙니다. roomId: {}, userId: {}, username: {}", 
+                        roomId, currentMemberId, currentMember.getUsername());
                 throw new AuthException(AuthErrorCode.FORBIDDEN);
             }
 
-            log.debug("멤버 제거 시작. roomId: {}, memberId: {}", roomId, currentMemberId);
+            log.debug("멤버 제거 시작. roomId: {}, userId: {}", roomId, currentMemberId);
             
             // 멤버에서 제거 (ID로 비교하여 removeIf 사용 - equals/hashCode에 의존하지 않음)
             boolean removed = room.getMembers().removeIf(m -> m.getId().equals(currentMemberId));
@@ -329,26 +335,28 @@ public class ChatRoomService {
             
             // 마지막 멤버가 나가면 채팅방 삭제
             if (room.getMembers().isEmpty()) {
-                log.info("마지막 멤버가 나갔으므로 채팅방 삭제. roomId: {}", roomId);
+                log.info("마지막 멤버가 나갔으므로 채팅방 삭제. roomId: {}, userId: {}", roomId, currentMemberId);
                 chatRoomRepository.delete(room);
                 chatRoomRepository.flush(); // 즉시 DB에 반영
+                log.info("채팅방 삭제 완료. roomId: {}", roomId);
             } else {
                 // 아직 멤버가 남아있으면 저장
                 chatRoomRepository.saveAndFlush(room); // 즉시 DB에 반영
-                log.info("채팅방에서 나가기 완료. roomId: {}, 남은 멤버 수: {}", 
-                        roomId, room.getMembers().size());
+                log.info("채팅방에서 나가기 완료. roomId: {}, userId: {}, 남은 멤버 수: {}", 
+                        roomId, currentMemberId, room.getMembers().size());
             }
 
+            log.info("채팅방 나가기 성공. roomId: {}, userId: {}", roomId, currentMemberId);
             return APIResponse.ok(null);
             
         } catch (AuthException e) {
-            log.error("채팅방 나가기 실패 (AuthException): {}", e.getMessage());
+            log.error("채팅방 나가기 실패 (AuthException) - roomId: {}, error: {}", roomId, e.getMessage());
             throw e;
         } catch (IllegalArgumentException e) {
-            log.error("채팅방 나가기 실패 (IllegalArgumentException): {}", e.getMessage());
+            log.error("채팅방 나가기 실패 (IllegalArgumentException) - roomId: {}, error: {}", roomId, e.getMessage());
             throw e;
         } catch (Exception e) {
-            log.error("채팅방 나가기 중 예상치 못한 오류 발생. roomId: {}", roomId, e);
+            log.error("채팅방 나가기 중 예상치 못한 오류 발생 - roomId: {}, error: {}", roomId, e.getMessage(), e);
             throw new RuntimeException("채팅방 나가기 중 오류가 발생했습니다: " + e.getMessage(), e);
         }
     }
