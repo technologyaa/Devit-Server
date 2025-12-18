@@ -1,11 +1,14 @@
 package technologyaa.Devit.domain.project.dto;
 
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import technologyaa.Devit.domain.project.entity.Project;
 
 import java.time.LocalDateTime;
 
+@Builder
+@AllArgsConstructor
 @Getter
 public class ProjectResponse {
     private Long projectId;
@@ -16,13 +19,15 @@ public class ProjectResponse {
     private Boolean isCompleted;
     private LocalDateTime createAt;
 
-    public ProjectResponse(Project project) {
-        this.projectId = project.getProjectId();
-        this.title = project.getTitle();
-        this.content = project.getContent();
-        this.isCompleted = project.getIsCompleted();
-        this.createAt = project.getCreateAt();
-        this.authorId = project.getAuthor().getId();
-        this.authorName = project.getAuthor().getUsername();
+    public static ProjectResponse from(Project project) {
+        return ProjectResponse.builder()
+                .projectId(project.getProjectId())
+                .authorId(project.getAuthor().getId())
+                .authorName(project.getAuthor().getUsername())
+                .title(project.getTitle())
+                .content(project.getContent())
+                .isCompleted(project.getIsCompleted())
+                .createAt(project.getCreateAt())
+                .build();
     }
 }
