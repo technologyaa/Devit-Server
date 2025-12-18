@@ -23,11 +23,14 @@ import technologyaa.Devit.domain.project.exception.ProjectErrorCode;
 import technologyaa.Devit.domain.project.exception.ProjectException;
 import technologyaa.Devit.domain.project.repository.ProjectRepository;
 import technologyaa.Devit.domain.project.repository.TaskRepository;
+import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ProjectService {
@@ -65,9 +68,49 @@ public class ProjectService {
     // read all
     @Transactional(readOnly = true)
     public List<ProjectResponse> findAllProjects() {
-        return projectRepository.findAllWithAuthor().stream()
-                .map(ProjectResponse::from)
-                .collect(Collectors.toList());
+        try {
+            log.info("프로젝트 목록 조회 시작");
+            List<Project> projects = projectRepository.findAllWithAuthor();
+            log.info("조회된 프로젝트 수: {}", projects.size());
+            
+            // 트랜잭션 내에서 모든 데이터를 로드하여 변환
+            List<ProjectResponse> result = new ArrayList<>();
+            for (Project project : projects) {
+                try {
+                    if (project == null) {
+                        log.warn("null 프로젝트 발견, 건너뜀");
+                        continue;
+                    }
+                    
+                    // 각 프로젝트의 author가 제대로 로드되었는지 확인
+                    if (project.getAuthor() == null) {
+                        log.warn("프로젝트 author가 null입니다 - projectId: {}, 건너뜀", project.getProjectId());
+                        continue;
+                    }
+                    
+                    // author의 username을 미리 호출하여 lazy loading 트리거 (JOIN FETCH로 이미 로드되어 있어야 함)
+                    try {
+                        project.getAuthor().getUsername();
+                    } catch (Exception e) {
+                        log.error("author 접근 중 오류 발생 - projectId: {}", project.getProjectId(), e);
+                        continue;
+                    }
+                    
+                    result.add(ProjectResponse.from(project));
+                } catch (Exception e) {
+                    log.error("프로젝트 변환 중 오류 발생 - projectId: {}", 
+                            project != null ? project.getProjectId() : "unknown", e);
+                    // 개별 프로젝트 변환 실패 시 해당 프로젝트만 건너뛰고 계속 진행
+                    continue;
+                }
+            }
+            
+            log.info("변환된 프로젝트 수: {}", result.size());
+            return result;
+        } catch (Exception e) {
+            log.error("프로젝트 목록 조회 중 오류 발생", e);
+            throw new RuntimeException("프로젝트 목록 조회 중 오류가 발생했습니다: " + e.getMessage(), e);
+        }
     }
 
     // read one

@@ -12,7 +12,7 @@ public interface ProjectRepository extends JpaRepository<Project, Long> {
     @Query("SELECT p FROM Project p JOIN FETCH p.author JOIN p.members m WHERE m.id = :memberId")
     List<Project> findByMemberId(@Param("memberId") Long memberId);
 
-    @Query("SELECT p FROM Project p JOIN FETCH p.author")
+    @Query("SELECT p FROM Project p JOIN FETCH p.author ORDER BY p.createAt DESC")
     List<Project> findAllWithAuthor();
 
     @Query("SELECT p FROM Project p JOIN FETCH p.author WHERE p.projectId = :id")
