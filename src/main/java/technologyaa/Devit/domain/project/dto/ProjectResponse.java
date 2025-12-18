@@ -27,35 +27,55 @@ public class ProjectResponse {
     private LocalDateTime updatedAt;  // createAt 사용 (updatedAt 필드가 없을 경우)
 
     public static ProjectResponse from(Project project) {
+        if (project == null) {
+            throw new IllegalArgumentException("Project cannot be null");
+        }
+        
+        if (project.getAuthor() == null) {
+            throw new IllegalArgumentException("Project author cannot be null for projectId: " + project.getProjectId());
+        }
+        
         LocalDateTime updatedAt = project.getUpdatedAt() != null ? project.getUpdatedAt() : project.getCreateAt();
+        String authorUsername = project.getAuthor().getUsername();
+        
         return ProjectResponse.builder()
                 .projectId(project.getProjectId())
                 .authorId(project.getAuthor().getId())
-                .authorName(project.getAuthor().getUsername())
+                .authorName(authorUsername)
                 .title(project.getTitle())
                 .content(project.getContent())
                 .isCompleted(project.getIsCompleted())
                 .createAt(project.getCreateAt())
                 .thumbnail(project.getProfile())
-                .owner(project.getAuthor().getUsername())
+                .owner(authorUsername)
                 .createdAt(project.getCreateAt())
                 .updatedAt(updatedAt)
                 .build();
     }
     
     public static ProjectResponse from(Project project, String major) {
+        if (project == null) {
+            throw new IllegalArgumentException("Project cannot be null");
+        }
+        
+        if (project.getAuthor() == null) {
+            throw new IllegalArgumentException("Project author cannot be null for projectId: " + project.getProjectId());
+        }
+        
         LocalDateTime updatedAt = project.getUpdatedAt() != null ? project.getUpdatedAt() : project.getCreateAt();
+        String authorUsername = project.getAuthor().getUsername();
+        
         return ProjectResponse.builder()
                 .projectId(project.getProjectId())
                 .authorId(project.getAuthor().getId())
-                .authorName(project.getAuthor().getUsername())
+                .authorName(authorUsername)
                 .title(project.getTitle())
                 .content(project.getContent())
                 .isCompleted(project.getIsCompleted())
                 .createAt(project.getCreateAt())
                 .thumbnail(project.getProfile())
                 .major(major)
-                .owner(project.getAuthor().getUsername())
+                .owner(authorUsername)
                 .createdAt(project.getCreateAt())
                 .updatedAt(updatedAt)
                 .build();

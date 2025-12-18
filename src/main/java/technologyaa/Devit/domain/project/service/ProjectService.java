@@ -23,11 +23,13 @@ import technologyaa.Devit.domain.project.exception.ProjectErrorCode;
 import technologyaa.Devit.domain.project.exception.ProjectException;
 import technologyaa.Devit.domain.project.repository.ProjectRepository;
 import technologyaa.Devit.domain.project.repository.TaskRepository;
+import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ProjectService {
@@ -65,9 +67,15 @@ public class ProjectService {
     // read all
     @Transactional(readOnly = true)
     public List<ProjectResponse> findAllProjects() {
-        return projectRepository.findAllWithAuthor().stream()
-                .map(ProjectResponse::from)
-                .collect(Collectors.toList());
+        try {
+            List<Project> projects = projectRepository.findAllWithAuthor();
+            return projects.stream()
+                    .map(ProjectResponse::from)
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            log.error("프로젝트 목록 조회 중 오류 발생", e);
+            throw new RuntimeException("프로젝트 목록 조회 중 오류가 발생했습니다: " + e.getMessage(), e);
+        }
     }
 
     // read one
