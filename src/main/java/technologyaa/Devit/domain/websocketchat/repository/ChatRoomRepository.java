@@ -25,7 +25,11 @@ public interface ChatRoomRepository extends JpaRepository<ChatRoom, Long> {
                                                     @Param("username2") String username2);
     
     // ID로 채팅방 조회 (members를 fetch join으로 함께 조회)
-    @Query("SELECT r FROM ChatRoom r LEFT JOIN FETCH r.members WHERE r.id = :id")
+    @Query("SELECT DISTINCT r FROM ChatRoom r JOIN FETCH r.members WHERE r.id = :id")
     Optional<ChatRoom> findByIdWithMembers(@Param("id") Long id);
+    
+    // 특정 채팅방에 특정 사용자가 속해있는지 확인
+    @Query("SELECT COUNT(r) > 0 FROM ChatRoom r JOIN r.members m WHERE r.id = :roomId AND m.username = :username")
+    boolean existsByRoomIdAndMemberUsername(@Param("roomId") Long roomId, @Param("username") String username);
 }
 
