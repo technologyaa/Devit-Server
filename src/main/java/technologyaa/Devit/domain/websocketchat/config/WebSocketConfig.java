@@ -27,6 +27,6 @@ public class WebSocketConfig implements WebSocketConfigurer {
         // "/ws/chat" 엔드포인트에 ChatHandler를 등록합니다.
         // setAllowedOrigins("*")는 CORS 설정을 간소화합니다. (운영 환경에서는 특정 도메인만 허용해야 합니다.)
         registry.addHandler(chatHandler, "/ws/chat")
-                .setAllowedOrigins("http://localhost:5173", "https://devit.run");
+                .setAllowedOrigins("http://localhost:5173", "https://devit.run", "https://dev1t.vercel.app");
     }
 }
