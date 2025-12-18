@@ -257,3 +257,4 @@ echo "프로젝트를 삭제하려면 다음 명령을 실행하세요:"
 echo "curl -X DELETE $BASE_URL/projects/$PROJECT_ID"
 echo ""
 
+
