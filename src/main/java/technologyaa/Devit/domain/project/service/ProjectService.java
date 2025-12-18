@@ -155,5 +155,12 @@ public class ProjectService {
                 })
                 .collect(Collectors.toList());
     }
+
+    @Transactional(readOnly = true)
+    public List<ProjectResponse> getRecommendedProjects() {
+        return projectRepository.findRecommendedProjects().stream()
+                .map(ProjectResponse::from)
+                .collect(Collectors.toList());
+    }
 }
 

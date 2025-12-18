@@ -17,5 +17,8 @@ public interface ProjectRepository extends JpaRepository<Project, Long> {
 
     @Query("SELECT p FROM Project p JOIN FETCH p.author WHERE p.projectId = :id")
     Optional<Project> findByIdWithAuthor(@Param("id") Long id);
+
+    @Query("SELECT p FROM Project p JOIN FETCH p.author WHERE p.isCompleted = false ORDER BY p.createAt DESC")
+    List<Project> findRecommendedProjects();
 }
 
