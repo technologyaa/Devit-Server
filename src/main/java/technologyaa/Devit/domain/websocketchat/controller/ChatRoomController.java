@@ -51,5 +51,11 @@ public class ChatRoomController {
             @PathVariable Long memberId) {
         return chatRoomService.addMemberToRoom(roomId, memberId);
     }
+
+    @Operation(summary = "채팅방 나가기", description = "현재 로그인한 사용자가 채팅방에서 나갑니다. 마지막 멤버가 나가면 채팅방이 삭제됩니다.")
+    @DeleteMapping("/{roomId}/members/me")
+    public APIResponse<Void> leaveRoom(@PathVariable Long roomId) {
+        return chatRoomService.leaveRoom(roomId);
+    }
 }
 

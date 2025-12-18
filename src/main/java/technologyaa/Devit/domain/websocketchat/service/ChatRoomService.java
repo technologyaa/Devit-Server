@@ -293,6 +293,59 @@ public class ChatRoomService {
         }
     }
 
+    /**
+     * 채팅방 나가기 (현재 로그인한 사용자가 채팅방에서 나감)
+     */
+    public APIResponse<Void> leaveRoom(Long roomId) {
+        try {
+            log.info("채팅방 나가기 요청. roomId: {}", roomId);
+            
+            Member currentMember = securityUtil.getMember();
+            log.debug("현재 사용자: {}", currentMember.getUsername());
+            
+            ChatRoom room = chatRoomRepository.findByIdWithMembers(roomId)
+                    .orElseThrow(() -> {
+                        log.error("채팅방을 찾을 수 없습니다. roomId: {}", roomId);
+                        return new RuntimeException("채팅방을 찾을 수 없습니다.");
+                    });
+
+            // 현재 사용자가 채팅방에 속해있는지 확인
+            boolean isMember = room.getMembers().stream()
+                    .anyMatch(member -> member.getId().equals(currentMember.getId()));
+            
+            if (!isMember) {
+                log.error("채팅방 멤버가 아닙니다. roomId: {}, memberId: {}", roomId, currentMember.getId());
+                throw new AuthException(AuthErrorCode.FORBIDDEN);
+            }
+
+            // 멤버에서 제거
+            room.getMembers().removeIf(member -> member.getId().equals(currentMember.getId()));
+            
+            // 마지막 멤버가 나가면 채팅방 삭제
+            if (room.getMembers().isEmpty()) {
+                log.info("마지막 멤버가 나갔으므로 채팅방 삭제. roomId: {}", roomId);
+                chatRoomRepository.delete(room);
+            } else {
+                // 아직 멤버가 남아있으면 저장
+                chatRoomRepository.save(room);
+                log.info("채팅방에서 나가기 완료. roomId: {}, 남은 멤버 수: {}", 
+                        roomId, room.getMembers().size());
+            }
+
+            return APIResponse.ok(null);
+            
+        } catch (AuthException e) {
+            log.error("채팅방 나가기 실패: {}", e.getMessage());
+            throw e;
+        } catch (RuntimeException e) {
+            log.error("채팅방 나가기 실패: {}", e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            log.error("채팅방 나가기 중 예상치 못한 오류 발생", e);
+            throw new RuntimeException("채팅방 나가기 중 오류가 발생했습니다.", e);
+        }
+    }
+
     @lombok.Getter
     @lombok.Setter
     @lombok.NoArgsConstructor
