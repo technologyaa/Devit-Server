@@ -22,7 +22,7 @@ public class Project {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long projectId;
 
-    @Column(nullable = false, columnDefinition = "TEXT")
+    @Column(columnDefinition = "TEXT")
     private String profile;
 
     @ManyToOne(fetch = FetchType.LAZY)
