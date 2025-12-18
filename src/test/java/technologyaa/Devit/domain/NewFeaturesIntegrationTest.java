@@ -486,9 +486,11 @@ public class NewFeaturesIntegrationTest {
         
         mockMvc.perform(delete("/chat/rooms/{roomId}/members/me", nonExistentRoomId)
                         .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().is5xxServerError()); // 서버에서 RuntimeException으로 처리되어 500 에러
+                .andExpect(status().isNotFound()) // 채팅방이 없으면 404 반환
+                .andExpect(jsonPath("$.data.code").value("CHAT_ROOM_NOT_FOUND"))
+                .andExpect(jsonPath("$.data.message").value("채팅방을 찾을 수 없습니다."));
 
-        System.out.println("✅ 채팅방 나가기 - 존재하지 않는 채팅방 테스트 성공");
+        System.out.println("✅ 채팅방 나가기 - 존재하지 않는 채팅방 테스트 성공 (404)");
     }
 }
 
