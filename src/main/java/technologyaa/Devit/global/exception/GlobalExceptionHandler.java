@@ -5,6 +5,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.dao.DataAccessException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.NoHandlerFoundException;
@@ -112,6 +113,34 @@ public class GlobalExceptionHandler {
         return ResponseEntity
                 .status(status)
                 .body(new APIResponse<>(status.value(), errorResponse));
+    }
+
+    @ExceptionHandler(DataAccessException.class)
+    public ResponseEntity<APIResponse<ErrorResponse>> handleDataAccessException(DataAccessException e) {
+        log.error("Database error occurred: ", e);
+
+        ErrorResponse errorResponse = ErrorResponse.of(
+                "DATABASE_ERROR",
+                "데이터베이스 오류가 발생했습니다."
+        );
+
+        return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new APIResponse<>(HttpStatus.INTERNAL_SERVER_ERROR.value(), errorResponse));
+    }
+
+    @ExceptionHandler(RuntimeException.class)
+    public ResponseEntity<APIResponse<ErrorResponse>> handleRuntimeException(RuntimeException e) {
+        log.error("RuntimeException: ", e);
+
+        ErrorResponse errorResponse = ErrorResponse.of(
+                "RUNTIME_ERROR",
+                e.getMessage() != null ? e.getMessage() : "서버 내부 오류가 발생했습니다."
+        );
+
+        return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new APIResponse<>(HttpStatus.INTERNAL_SERVER_ERROR.value(), errorResponse));
     }
 
     @ExceptionHandler(Exception.class)

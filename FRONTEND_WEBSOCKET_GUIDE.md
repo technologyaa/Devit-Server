@@ -1,328 +1,312 @@
-# 프론트엔드 WebSocket 메시지 수신 가이드
+# 프로젝트 API 500 에러 디버깅 가이드
 
-## 1. WebSocket 연결 설정
+## 🔴 현재 발생 중인 문제
 
-### 연결 URL 형식
+프로젝트 관련 API에서 **500 Internal Server Error**가 계속 발생하고 있습니다.
+
+### 발생 위치
+1. `GET /projects` - 프로젝트 목록 조회
+2. `POST /projects` - 프로젝트 생성 (예상)
+
+---
+
+## 📋 프론트엔드에서 확인할 수 있는 정보
+
+브라우저 콘솔에서 다음 정보를 확인할 수 있습니다:
+
+### GET /projects 요청 정보
 ```
-ws://localhost:8080/ws/chat?username=사용자명
-```
-또는
-```
-wss://devit.run/ws/chat?username=사용자명
-```
-
-**중요**: `?username=사용자명` 쿼리 파라미터를 반드시 포함해야 합니다. 이는 서버가 사용자 세션을 추적하기 위해 필요합니다.
-
-### 연결 예제 (JavaScript)
-```javascript
-const username = 'user123'; // 로그인한 사용자명
-const wsUrl = `ws://localhost:8080/ws/chat?username=${encodeURIComponent(username)}`;
-const websocket = new WebSocket(wsUrl);
+=== FETCH PROJECTS REQUEST ===
+URL: https://devit.run/projects
+Headers: {
+  Accept: "application/json",
+  Authorization: "Bearer {token}"
+}
 ```
 
-## 2. 메시지 수신 처리 (onmessage)
+### 에러 응답 정보
+```
+Error status: 500
+Error data: {
+  status: 500,
+  message: "...",
+  data: { ... }
+}
+```
 
-서버에서 전송하는 메시지는 다음 JSON 형식입니다:
+---
 
+## 🔍 백엔드에서 확인해야 할 사항
+
+### 1. 서버 로그 확인 (최우선)
+
+**확인할 로그:**
+- 애플리케이션 로그 (Spring Boot 로그)
+- 데이터베이스 쿼리 로그
+- 예외 스택 트레이스
+
+**예상되는 에러:**
+```
+java.sql.SQLException: ...
+org.springframework.dao.DataAccessException: ...
+NullPointerException: ...
+```
+
+### 2. GET /projects 엔드포인트 확인
+
+**확인 사항:**
+- [ ] 컨트롤러 메서드가 올바르게 매핑되어 있는가?
+- [ ] 인증/권한 체크가 올바른가?
+- [ ] 데이터베이스 쿼리가 올바른가?
+- [ ] 예외 처리가 되어 있는가?
+
+**예상되는 문제:**
+```java
+// 1. 데이터베이스 연결 오류
+@GetMapping("/projects")
+public ResponseEntity<?> getProjects(@AuthenticationPrincipal UserDetails userDetails) {
+    // DB 연결 실패 시 500 에러
+}
+
+// 2. NullPointerException
+@GetMapping("/projects")
+public ResponseEntity<?> getProjects(@AuthenticationPrincipal UserDetails userDetails) {
+    Long userId = userDetails.getId(); // userDetails가 null일 수 있음
+    // ...
+}
+
+// 3. SQL 쿼리 오류
+@GetMapping("/projects")
+public ResponseEntity<?> getProjects(@AuthenticationPrincipal UserDetails userDetails) {
+    // 잘못된 컬럼명, 테이블명 등
+    return projectRepository.findByUserId(userId); // 컬럼명 오류
+}
+```
+
+### 3. 데이터베이스 확인
+
+**확인 사항:**
+- [ ] 프로젝트 테이블이 존재하는가?
+- [ ] 테이블 이름이 정확한가? (`project`, `projects`, `Project` 등)
+- [ ] 컬럼명이 정확한가?
+  - `project_id` vs `id`
+  - `user_id` vs `owner_id` vs `creator_id`
+- [ ] 외래키 관계가 올바른가?
+- [ ] 데이터베이스 연결이 정상인가?
+
+**SQL 확인:**
+```sql
+-- 테이블 존재 확인
+SHOW TABLES LIKE '%project%';
+
+-- 테이블 구조 확인
+DESCRIBE projects;
+-- 또는
+SELECT * FROM INFORMATION_SCHEMA.COLUMNS 
+WHERE TABLE_NAME = 'projects';
+
+-- 데이터 확인
+SELECT * FROM projects LIMIT 10;
+```
+
+### 4. 인증/권한 확인
+
+**확인 사항:**
+- [ ] `@AuthenticationPrincipal`이 null이 아닌가?
+- [ ] 토큰 검증이 올바른가?
+- [ ] 사용자 ID 추출이 올바른가?
+
+**예상되는 문제:**
+```java
+@GetMapping("/projects")
+public ResponseEntity<?> getProjects(@AuthenticationPrincipal UserDetails userDetails) {
+    // userDetails가 null이면 NullPointerException 발생
+    Long userId = userDetails.getId(); // 500 에러 발생 가능
+}
+```
+
+### 5. 응답 형식 확인
+
+**현재 프론트엔드가 기대하는 형식:**
 ```json
+// 옵션 1: 배열 직접 반환
+[
+  {
+    "projectId": 1,
+    "title": "프로젝트 이름",
+    "content": "설명",
+    "major": "BACKEND"
+  }
+]
+
+// 옵션 2: 래핑된 형식
 {
-  "id": 1,
-  "sender": "user123",
-  "receiver": null,
-  "content": "안녕하세요!",
-  "roomId": 3,
-  "type": "TALK",
-  "timestamp": "2024-12-18T14:30:00"
+  "status": 200,
+  "data": [
+    {
+      "projectId": 1,
+      "title": "프로젝트 이름",
+      "content": "설명",
+      "major": "BACKEND"
+    }
+  ]
 }
 ```
 
-### 필드 설명
-- `id`: 메시지 ID (Long)
-- `sender`: 발신자 사용자명 (String, 필수)
-- `receiver`: 수신자 사용자명 (String, null 가능 - 채팅방 메시지는 null)
-- `content`: 메시지 내용 (String, 필수)
-- `roomId`: 채팅방 ID (Long, null 가능 - 1:1 메시지는 null)
-- `type`: 메시지 타입 (String) - `ENTER`, `TALK`, `LEAVE`
-- `timestamp`: 메시지 생성 시간 (String, ISO 8601 형식)
+---
 
-### 메시지 타입
-- `ENTER`: 사용자가 채팅방에 입장했을 때
-- `TALK`: 일반 대화 메시지
-- `LEAVE`: 사용자가 채팅방에서 나갔을 때
+## 🛠️ 백엔드 수정 체크리스트
 
-## 3. 구현 예제
+### GET /projects 엔드포인트
 
-### React 예제
-```typescript
-import { useEffect, useRef, useState } from 'react';
-
-interface ChatMessage {
-  id: number;
-  sender: string;
-  receiver: string | null;
-  content: string;
-  roomId: number | null;
-  type: 'ENTER' | 'TALK' | 'LEAVE';
-  timestamp: string;
-}
-
-function ChatComponent({ username, roomId }: { username: string; roomId: number }) {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const wsRef = useRef<WebSocket | null>(null);
-
-  useEffect(() => {
-    // WebSocket 연결
-    const wsUrl = `ws://localhost:8080/ws/chat?username=${encodeURIComponent(username)}`;
-    const ws = new WebSocket(wsUrl);
-    wsRef.current = ws;
-
-    // 연결 성공
-    ws.onopen = () => {
-      console.log('WebSocket 연결 성공');
-    };
-
-    // 메시지 수신
-    ws.onmessage = (event: MessageEvent) => {
-      try {
-        const message: ChatMessage = JSON.parse(event.data);
+```java
+@GetMapping("/projects")
+public ResponseEntity<?> getProjects(
+    @AuthenticationPrincipal UserDetails userDetails
+) {
+    try {
+        // 1. 인증 확인
+        if (userDetails == null) {
+            return ResponseEntity.status(401)
+                .body(new ErrorResponse(401, "인증이 필요합니다."));
+        }
         
-        // 오류 메시지 처리
-        if ('error' in message) {
-          console.error('서버 오류:', message.error);
-          return;
+        // 2. 사용자 ID 추출 (안전하게)
+        Long userId = null;
+        try {
+            userId = Long.parseLong(userDetails.getUsername());
+            // 또는 userDetails에서 직접 가져오는 방법
+        } catch (Exception e) {
+            return ResponseEntity.status(400)
+                .body(new ErrorResponse(400, "유효하지 않은 사용자 정보입니다."));
         }
+        
+        // 3. 데이터베이스 조회
+        List<Project> projects = projectService.getProjectsByUserId(userId);
+        
+        // 4. 응답 형식 통일
+        return ResponseEntity.ok()
+            .body(new ApiResponse<>(200, projects));
+            
+    } catch (DataAccessException e) {
+        // 데이터베이스 오류
+        log.error("Database error while fetching projects", e);
+        return ResponseEntity.status(500)
+            .body(new ErrorResponse(500, "데이터베이스 오류가 발생했습니다."));
+            
+    } catch (Exception e) {
+        // 기타 예외
+        log.error("Unexpected error while fetching projects", e);
+        return ResponseEntity.status(500)
+            .body(new ErrorResponse(500, "서버 내부 오류가 발생했습니다."));
+    }
+}
+```
 
-        // 채팅방 메시지인 경우에만 처리 (roomId가 일치하는 경우)
-        if (message.roomId === roomId) {
-          setMessages(prev => [...prev, message]);
+### POST /projects 엔드포인트
+
+```java
+@PostMapping("/projects")
+public ResponseEntity<?> createProject(
+    @RequestBody CreateProjectRequest request,
+    @AuthenticationPrincipal UserDetails userDetails
+) {
+    try {
+        // 1. 인증 확인
+        if (userDetails == null) {
+            return ResponseEntity.status(401)
+                .body(new ErrorResponse(401, "인증이 필요합니다."));
         }
-      } catch (error) {
-        console.error('메시지 파싱 오류:', error);
-      }
-    };
-
-    // 연결 종료
-    ws.onclose = () => {
-      console.log('WebSocket 연결 종료');
-    };
-
-    // 오류 처리
-    ws.onerror = (error) => {
-      console.error('WebSocket 오류:', error);
-    };
-
-    // 정리 함수
-    return () => {
-      ws.close();
-    };
-  }, [username, roomId]);
-
-  // 메시지 전송 함수
-  const sendMessage = (content: string) => {
-    if (wsRef.current?.readyState === WebSocket.OPEN) {
-      const message = {
-        sender: username,
-        content: content,
-        roomId: roomId,
-        type: 'TALK' as const
-      };
-      wsRef.current.send(JSON.stringify(message));
+        
+        // 2. 요청 검증
+        if (request.getTitle() == null || request.getTitle().trim().isEmpty()) {
+            return ResponseEntity.status(400)
+                .body(new ErrorResponse(400, "프로젝트 이름을 입력해주세요."));
+        }
+        
+        // 3. 사용자 ID 추출
+        Long userId = Long.parseLong(userDetails.getUsername());
+        
+        // 4. 프로젝트 생성
+        Project project = projectService.createProject(
+            userId,
+            request.getTitle(),
+            request.getContent(),
+            request.getMajor()
+        );
+        
+        // 5. 응답
+        return ResponseEntity.status(201)
+            .body(new ApiResponse<>(201, project));
+            
+    } catch (DataAccessException e) {
+        log.error("Database error while creating project", e);
+        return ResponseEntity.status(500)
+            .body(new ErrorResponse(500, "데이터베이스 오류가 발생했습니다."));
+            
+    } catch (Exception e) {
+        log.error("Unexpected error while creating project", e);
+        return ResponseEntity.status(500)
+            .body(new ErrorResponse(500, "서버 내부 오류가 발생했습니다."));
     }
-  };
-
-  return (
-    <div>
-      {/* 메시지 목록 렌더링 */}
-      {messages.map(msg => (
-        <div key={msg.id}>
-          <strong>{msg.sender}</strong>: {msg.content}
-        </div>
-      ))}
-      
-      {/* 메시지 입력 및 전송 UI */}
-      {/* ... */}
-    </div>
-  );
 }
 ```
 
-### Vanilla JavaScript 예제
-```javascript
-// WebSocket 연결 설정
-const username = 'user123'; // 실제 사용자명으로 변경
-const roomId = 3; // 실제 채팅방 ID로 변경
+---
 
-const wsUrl = `ws://localhost:8080/ws/chat?username=${encodeURIComponent(username)}`;
-const websocket = new WebSocket(wsUrl);
+## 📝 에러 로그 예시
 
-// 메시지 수신 처리
-websocket.onmessage = function(event) {
-  const payload = event.data;
-  console.log('📨 메시지 수신:', payload);
+백엔드에서 확인해야 할 로그 형식:
 
-  try {
-    // JSON 문자열을 객체로 변환
-    const message = JSON.parse(payload);
-
-    // 오류 메시지 처리
-    if (message.error) {
-      console.error('서버 오류:', message.error);
-      alert(`오류: ${message.error}`);
-      return;
-    }
-
-    // ChatMessage 객체 구조
-    // {
-    //   id: 1,
-    //   sender: "user123",
-    //   receiver: null,
-    //   content: "안녕하세요!",
-    //   roomId: 3,
-    //   type: "TALK",
-    //   timestamp: "2024-12-18T14:30:00"
-    // }
-
-    // 채팅방 메시지인 경우에만 처리
-    if (message.roomId === roomId) {
-      displayMessage(message);
-    } else {
-      console.log('다른 채팅방 메시지입니다. 무시합니다.');
-    }
-
-  } catch (error) {
-    console.error('❌ 수신 메시지 파싱 오류:', error);
-    console.error('문제가 된 원본 데이터:', payload);
-  }
-};
-
-// 메시지를 화면에 표시하는 함수
-function displayMessage(message) {
-  const chatContainer = document.getElementById('chat-messages');
-  
-  const messageDiv = document.createElement('div');
-  messageDiv.className = 'message';
-  
-  // 메시지 타입에 따른 처리
-  if (message.type === 'ENTER' || message.type === 'LEAVE') {
-    messageDiv.className += ' system-message';
-    messageDiv.textContent = `${message.sender}님이 ${message.type === 'ENTER' ? '입장' : '퇴장'}하셨습니다.`;
-  } else {
-    messageDiv.className += ' chat-message';
-    const isMyMessage = message.sender === username;
-    messageDiv.className += isMyMessage ? ' my-message' : ' other-message';
-    
-    messageDiv.innerHTML = `
-      <div class="message-sender">${message.sender}</div>
-      <div class="message-content">${message.content}</div>
-      <div class="message-time">${formatTimestamp(message.timestamp)}</div>
-    `;
-  }
-  
-  chatContainer.appendChild(messageDiv);
-  chatContainer.scrollTop = chatContainer.scrollHeight; // 자동 스크롤
-}
-
-// 타임스탬프 포맷팅 함수
-function formatTimestamp(timestamp) {
-  const date = new Date(timestamp);
-  return date.toLocaleTimeString('ko-KR', { 
-    hour: '2-digit', 
-    minute: '2-digit' 
-  });
-}
-
-// 연결 성공
-websocket.onopen = function() {
-  console.log('✅ WebSocket 연결 성공');
-};
-
-// 연결 종료
-websocket.onclose = function(event) {
-  console.log('❌ WebSocket 연결 종료:', event.code, event.reason);
-};
-
-// 오류 발생
-websocket.onerror = function(error) {
-  console.error('❌ WebSocket 오류:', error);
-};
-
-// 메시지 전송 함수
-function sendMessage(content) {
-  if (websocket.readyState === WebSocket.OPEN) {
-    const message = {
-      sender: username,
-      content: content,
-      roomId: roomId,
-      type: 'TALK'
-    };
-    websocket.send(JSON.stringify(message));
-  } else {
-    console.error('WebSocket이 열려있지 않습니다.');
-  }
-}
+```
+ERROR [ProjectController] - Failed to fetch projects
+java.sql.SQLException: Table 'database.projects' doesn't exist
+    at com.mysql.cj.jdbc.exceptions.SQLError.createSQLException(SQLError.java:129)
+    at com.mysql.cj.jdbc.exceptions.SQLError.createSQLException(SQLError.java:97)
+    ...
 ```
 
-## 4. 메시지 전송 형식
+또는
 
-### 채팅방 메시지 전송
-```javascript
-const message = {
-  sender: "user123",    // 발신자 사용자명 (필수)
-  content: "안녕하세요!", // 메시지 내용 (필수)
-  roomId: 3,            // 채팅방 ID (필수)
-  type: "TALK"          // 메시지 타입 (기본값: "TALK")
-};
-
-websocket.send(JSON.stringify(message));
+```
+ERROR [ProjectController] - Failed to fetch projects
+java.lang.NullPointerException
+    at com.example.controller.ProjectController.getProjects(ProjectController.java:45)
+    ...
 ```
 
-### 1:1 메시지 전송 (선택사항)
-```javascript
-const message = {
-  sender: "user123",
-  content: "안녕하세요!",
-  receiver: "user456",  // 수신자 사용자명
-  type: "TALK"
-  // roomId는 없음
-};
+---
 
-websocket.send(JSON.stringify(message));
-```
+## ✅ 해결 후 확인 사항
 
-## 5. 주의사항
+1. **프론트엔드 콘솔 확인**
+   - 에러가 사라졌는지 확인
+   - 프로젝트 목록이 정상적으로 표시되는지 확인
 
-### 1. username 쿼리 파라미터 필수
-- WebSocket 연결 시 `?username=사용자명` 쿼리 파라미터를 반드시 포함해야 합니다.
-- 없으면 서버가 사용자 세션을 추적할 수 없어 메시지가 전달되지 않습니다.
+2. **네트워크 탭 확인**
+   - `GET /projects` 요청이 200 OK로 응답하는지 확인
+   - 응답 데이터 형식 확인
 
-### 2. sender와 username 일치
-- 메시지의 `sender` 필드가 WebSocket 연결 시 사용한 `username`과 일치해야 합니다.
-- 일치하지 않으면 메시지 전송은 되지만, 다른 사용자에게 메시지가 전달되지 않을 수 있습니다.
+3. **다른 API와 일관성 확인**
+   - `/developers`, `/profile` 등 다른 API와 응답 형식이 일치하는지 확인
 
-### 3. roomId 확인
-- 수신한 메시지의 `roomId`를 확인하여 현재 채팅방 메시지만 처리하세요.
-- 다른 채팅방의 메시지는 무시해야 합니다.
+---
 
-### 4. 연결 상태 확인
-- 메시지 전송 전에 `websocket.readyState === WebSocket.OPEN`을 확인하세요.
-- 연결이 열려있지 않으면 메시지가 전송되지 않습니다.
+## 🚨 긴급 확인 사항
 
-### 5. 에러 처리
-- 서버에서 오류가 발생하면 `{ error: "오류 메시지", details: "상세 정보" }` 형식으로 반환됩니다.
-- `onmessage` 핸들러에서 오류를 처리하세요.
+백엔드 개발자가 **즉시 확인**해야 할 사항:
 
-## 6. 디버깅 팁
+1. ✅ **서버 로그 파일 확인** - 가장 중요!
+2. ✅ **데이터베이스 연결 상태 확인**
+3. ✅ **프로젝트 테이블 존재 여부 확인**
+4. ✅ **컨트롤러 메서드에 예외 처리 추가**
+5. ✅ **@AuthenticationPrincipal null 체크 추가**
 
-### 서버 로그 확인
-서버 로그에서 다음 메시지를 확인할 수 있습니다:
-- `"새 세션 연결됨: ... 사용자: XXX"` → 연결 성공
-- `"메시지 전송 시작. roomId: X, sender: Y"` → 메시지 전송 시작
-- `"사용자 'XXX'에 대한 세션을 찾을 수 없음"` → username 매칭 실패
-- `"메시지 전송 완료. 성공: N"` → 전송 성공
+---
 
-### 클라이언트 콘솔 확인
-- 브라우저 개발자 도구 콘솔에서 WebSocket 메시지를 확인할 수 있습니다.
-- `console.log`를 사용하여 수신한 메시지를 확인하세요.
+## 📞 추가 정보
 
-
-
+프론트엔드에서 더 자세한 정보가 필요하면:
+- 브라우저 개발자 도구 → Network 탭에서 요청/응답 확인
+- 브라우저 콘솔에서 상세 에러 로그 확인
+- 위의 "프론트엔드에서 확인할 수 있는 정보" 섹션 참고
