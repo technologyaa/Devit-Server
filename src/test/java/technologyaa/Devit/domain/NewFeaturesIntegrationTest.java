@@ -267,5 +267,97 @@ public class NewFeaturesIntegrationTest {
         System.out.println("   - roomId로 메시지 조회 가능");
         System.out.println("   - 저장된 메시지 개수: " + messagesByRoom.size());
     }
+
+    @Test
+    @WithMockUser(username = "testuser")
+    void testGetRoomMessagesAPI() throws Exception {
+        // 1. 채팅방 생성
+        Set<Member> members = new HashSet<>();
+        members.add(testMember);
+        ChatRoom testRoom = ChatRoom.builder()
+                .name("API 테스트 채팅방")
+                .description("API 테스트용")
+                .type(ChatRoom.RoomType.GROUP)
+                .createdAt(LocalDateTime.now())
+                .members(members)
+                .build();
+        testRoom = chatRoomRepository.save(testRoom);
+        Long roomId = testRoom.getId();
+
+        // 2. 채팅방에 메시지 여러 개 저장
+        ChatMessage msg1 = new ChatMessage();
+        msg1.setSender("testuser");
+        msg1.setContent("메시지 1");
+        msg1.setType(ChatMessage.MessageType.TALK);
+        msg1.setTimestamp(LocalDateTime.now().minusMinutes(2));
+        msg1.setRoom(testRoom);
+        chatMessageRepository.save(msg1);
+
+        ChatMessage msg2 = new ChatMessage();
+        msg2.setSender("testuser");
+        msg2.setContent("메시지 2");
+        msg2.setType(ChatMessage.MessageType.TALK);
+        msg2.setTimestamp(LocalDateTime.now().minusMinutes(1));
+        msg2.setRoom(testRoom);
+        chatMessageRepository.save(msg2);
+
+        ChatMessage msg3 = new ChatMessage();
+        msg3.setSender("testuser");
+        msg3.setContent("메시지 3");
+        msg3.setType(ChatMessage.MessageType.TALK);
+        msg3.setTimestamp(LocalDateTime.now());
+        msg3.setRoom(testRoom);
+        chatMessageRepository.save(msg3);
+
+        // 3. API를 통해 메시지 조회
+        mockMvc.perform(get("/chat/messages/room/{roomId}", roomId)
+                        .param("page", "0")
+                        .param("size", "50")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data").isArray())
+                .andExpect(jsonPath("$.data.length()").value(greaterThanOrEqualTo(3)))
+                .andExpect(jsonPath("$.data[0].roomId").value(roomId))
+                .andExpect(jsonPath("$.data[0].content").exists())
+                .andExpect(jsonPath("$.data[0].sender").value("testuser"));
+
+        System.out.println("✅ 채팅방 메시지 조회 API 테스트 성공");
+    }
+
+    @Test
+    @WithMockUser(username = "testuser")
+    void testGetRoomMessagesAPI_Forbidden() throws Exception {
+        // 1. 다른 사용자 생성
+        Member otherMember = Member.builder()
+                .username("otheruser")
+                .password("encodedPassword")
+                .email("other@example.com")
+                .createdAt("2024-01-01 00:00:00")
+                .credit(0L)
+                .role(Role.ROLE_USER)
+                .isDeveloper(false)
+                .build();
+        otherMember = memberRepository.save(otherMember);
+
+        // 2. 다른 사용자만 속한 채팅방 생성
+        Set<Member> members = new HashSet<>();
+        members.add(otherMember);
+        ChatRoom otherRoom = ChatRoom.builder()
+                .name("다른 사용자 채팅방")
+                .description("접근 불가 채팅방")
+                .type(ChatRoom.RoomType.GROUP)
+                .createdAt(LocalDateTime.now())
+                .members(members)
+                .build();
+        otherRoom = chatRoomRepository.save(otherRoom);
+        Long otherRoomId = otherRoom.getId();
+
+        // 3. testuser가 접근할 수 없는 채팅방의 메시지 조회 시도
+        mockMvc.perform(get("/chat/messages/room/{roomId}", otherRoomId)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isForbidden());
+
+        System.out.println("✅ 채팅방 메시지 조회 API 권한 체크 테스트 성공 (Forbidden)");
+    }
 }
 
