@@ -311,26 +311,20 @@ public class ChatRoomService {
 
             log.debug("채팅방 조회 완료. roomId: {}, 멤버 수: {}", roomId, room.getMembers() != null ? room.getMembers().size() : 0);
 
-            // 현재 사용자가 채팅방에 속해있는지 확인
-            Member memberToRemove = null;
-            if (room.getMembers() != null) {
-                for (Member member : room.getMembers()) {
-                    if (member.getId().equals(currentMember.getId())) {
-                        memberToRemove = member;
-                        break;
-                    }
-                }
-            }
+            // 현재 사용자가 채팅방에 속해있는지 확인 및 제거
+            Long currentMemberId = currentMember.getId();
+            boolean wasMember = room.getMembers() != null && 
+                               room.getMembers().stream().anyMatch(m -> m.getId().equals(currentMemberId));
             
-            if (memberToRemove == null) {
-                log.error("채팅방 멤버가 아닙니다. roomId: {}, memberId: {}", roomId, currentMember.getId());
+            if (!wasMember) {
+                log.error("채팅방 멤버가 아닙니다. roomId: {}, memberId: {}", roomId, currentMemberId);
                 throw new AuthException(AuthErrorCode.FORBIDDEN);
             }
 
-            log.debug("멤버 제거 시작. roomId: {}, memberId: {}", roomId, memberToRemove.getId());
+            log.debug("멤버 제거 시작. roomId: {}, memberId: {}", roomId, currentMemberId);
             
-            // 멤버에서 제거 (명시적으로 remove 사용)
-            boolean removed = room.getMembers().remove(memberToRemove);
+            // 멤버에서 제거 (ID로 비교하여 removeIf 사용 - equals/hashCode에 의존하지 않음)
+            boolean removed = room.getMembers().removeIf(m -> m.getId().equals(currentMemberId));
             log.debug("멤버 제거 결과: {}, 남은 멤버 수: {}", removed, room.getMembers().size());
             
             // 마지막 멤버가 나가면 채팅방 삭제
