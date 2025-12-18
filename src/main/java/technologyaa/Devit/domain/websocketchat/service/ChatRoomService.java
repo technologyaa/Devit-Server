@@ -1,8 +1,6 @@
 package technologyaa.Devit.domain.websocketchat.service;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import technologyaa.Devit.domain.auth.jwt.entity.Member;
@@ -12,6 +10,7 @@ import technologyaa.Devit.domain.auth.jwt.repository.MemberRepository;
 import technologyaa.Devit.domain.common.APIResponse;
 import technologyaa.Devit.domain.websocketchat.entity.ChatRoom;
 import technologyaa.Devit.domain.websocketchat.repository.ChatRoomRepository;
+import technologyaa.Devit.global.util.SecurityUtil;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -23,19 +22,71 @@ public class ChatRoomService {
 
     private final ChatRoomRepository chatRoomRepository;
     private final MemberRepository memberRepository;
+    private final SecurityUtil securityUtil;
 
     /**
      * 채팅방 생성
      */
     public APIResponse<ChatRoomResponse> createRoom(ChatRoomRequest request) {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        Member creator = memberRepository.findByUsername(auth.getName())
-                .orElseThrow(() -> new AuthException(AuthErrorCode.MEMBER_NOT_FOUND));
+        if (request == null) {
+            throw new IllegalArgumentException("요청이 null입니다.");
+        }
+        
+        Member creator = securityUtil.getMember();
+
+        // 1:1 채팅방 처리: memberIds가 1개이고 type이 PRIVATE이거나 null인 경우
+        if (request.getMemberIds() != null && request.getMemberIds().size() == 1) {
+            Long otherMemberId = request.getMemberIds().get(0);
+            
+            // 자기 자신과 채팅방을 만들 수 없음
+            if (creator.getId().equals(otherMemberId)) {
+                throw new IllegalArgumentException("자기 자신과 채팅방을 생성할 수 없습니다.");
+            }
+            
+            // 기존 1:1 채팅방이 있는지 확인
+            Member otherMember = memberRepository.findById(otherMemberId)
+                    .orElseThrow(() -> new AuthException(AuthErrorCode.MEMBER_NOT_FOUND));
+            
+            ChatRoom existingRoom = chatRoomRepository.findPrivateRoomBetweenUsers(
+                    creator.getUsername(), otherMember.getUsername()).orElse(null);
+            
+            if (existingRoom != null) {
+                return APIResponse.ok(ChatRoomResponse.from(existingRoom));
+            }
+            
+            // 새 1:1 채팅방 생성
+            String roomName = request.getName();
+            if (roomName == null || roomName.trim().isEmpty()) {
+                roomName = creator.getUsername() + " & " + otherMember.getUsername();
+            }
+            
+            ChatRoom newRoom = ChatRoom.builder()
+                    .name(roomName)
+                    .description(request.getDescription())
+                    .type(ChatRoom.RoomType.PRIVATE)
+                    .build();
+            newRoom.getMembers().add(creator);
+            newRoom.getMembers().add(otherMember);
+            
+            ChatRoom savedRoom = chatRoomRepository.save(newRoom);
+            return APIResponse.ok(ChatRoomResponse.from(savedRoom));
+        }
+
+        // 그룹 채팅방 처리
+        String roomName = request.getName();
+        if (roomName == null || roomName.trim().isEmpty()) {
+            throw new IllegalArgumentException("채팅방 이름은 필수입니다.");
+        }
+
+        ChatRoom.RoomType roomType = request.getType();
+        if (roomType == null) {
+            roomType = ChatRoom.RoomType.GROUP;
+        }
 
         ChatRoom room = ChatRoom.builder()
-                .name(request.getName())
+                .name(roomName)
                 .description(request.getDescription())
-                .type(request.getType())
+                .type(roomType)
                 .build();
 
         room.getMembers().add(creator);
@@ -57,12 +108,15 @@ public class ChatRoomService {
      * 1:1 채팅방 생성 또는 조회
      */
     public APIResponse<ChatRoomResponse> getOrCreatePrivateRoom(Long otherMemberId) {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        Member currentMember = memberRepository.findByUsername(auth.getName())
-                .orElseThrow(() -> new AuthException(AuthErrorCode.MEMBER_NOT_FOUND));
+        Member currentMember = securityUtil.getMember();
 
         Member otherMember = memberRepository.findById(otherMemberId)
                 .orElseThrow(() -> new AuthException(AuthErrorCode.MEMBER_NOT_FOUND));
+
+        // 자기 자신과 채팅방을 만들 수 없음
+        if (currentMember.getId().equals(otherMemberId)) {
+            throw new IllegalArgumentException("자기 자신과 채팅방을 생성할 수 없습니다.");
+        }
 
         // 기존 1:1 채팅방 찾기
         ChatRoom existingRoom = chatRoomRepository.findPrivateRoomBetweenUsers(
@@ -88,9 +142,7 @@ public class ChatRoomService {
      * 내가 속한 채팅방 목록 조회
      */
     public APIResponse<List<ChatRoomResponse>> getMyRooms() {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        Member member = memberRepository.findByUsername(auth.getName())
-                .orElseThrow(() -> new AuthException(AuthErrorCode.MEMBER_NOT_FOUND));
+        Member member = securityUtil.getMember();
 
         List<ChatRoom> rooms = chatRoomRepository.findByMemberUsername(member.getUsername());
         List<ChatRoomResponse> responses = rooms.stream()

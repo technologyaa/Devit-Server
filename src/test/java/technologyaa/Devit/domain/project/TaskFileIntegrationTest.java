@@ -46,9 +46,9 @@ import static org.junit.jupiter.api.Assertions.*;
     "spring.jwt.refresh-token-expiration=86400000",
     "spring.data.redis.host=localhost",
     "spring.data.redis.port=6379",
-    "spring.security.oauth2.client.registration.google.client-id=test-client-id",
-    "spring.security.oauth2.client.registration.google.client-secret=test-client-secret",
-    "server.port=0"
+    "server.port=8080",
+    "spring.security.oauth2.client.registration.google.client-id=test-google-client-id",
+    "spring.security.oauth2.client.registration.google.client-secret=test-google-client-secret"
 })
 @Transactional
 public class TaskFileIntegrationTest {
@@ -85,8 +85,7 @@ public class TaskFileIntegrationTest {
         }
 
         // 테스트용 유저 생성
-        testMember = memberRepository.findByUsername("testuser")
-                .orElse(null);
+        testMember = memberRepository.findByUsername("testuser").orElse(null);
         if (testMember == null) {
             testMember = Member.builder()
                     .username("testuser")

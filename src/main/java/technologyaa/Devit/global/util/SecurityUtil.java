@@ -16,7 +16,7 @@ public class SecurityUtil {
 
     public Member getMember() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        
+
         if (auth == null || !auth.isAuthenticated() || auth.getPrincipal().equals("anonymousUser")) {
             throw new AuthException(AuthErrorCode.UNAUTHORIZED);
         }

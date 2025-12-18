@@ -14,10 +14,12 @@ import org.springframework.transaction.annotation.Transactional;
 import technologyaa.Devit.domain.auth.jwt.entity.Member;
 import technologyaa.Devit.domain.auth.jwt.entity.Role;
 import technologyaa.Devit.domain.auth.jwt.repository.MemberRepository;
+import technologyaa.Devit.domain.project.dto.ProjectCreateRequest;
 import technologyaa.Devit.domain.project.entity.Project;
 import technologyaa.Devit.domain.project.entity.Task;
 import technologyaa.Devit.domain.project.repository.ProjectRepository;
 import technologyaa.Devit.domain.project.repository.TaskRepository;
+import technologyaa.Devit.domain.project.service.ProjectService;
 import technologyaa.Devit.domain.websocketchat.dto.ChatMessage;
 import technologyaa.Devit.domain.websocketchat.repository.ChatMessageRepository;
 
@@ -67,6 +69,9 @@ public class NewFeaturesIntegrationTest {
     @Autowired
     private ObjectMapper objectMapper;
 
+    @Autowired
+    private ProjectService projectService;
+
     private Member testMember;
     private Project testProject;
     private Task testTask;
@@ -86,14 +91,11 @@ public class NewFeaturesIntegrationTest {
         testMember = memberRepository.save(testMember);
 
         // 테스트용 프로젝트 생성
-        testProject = Project.builder()
-                .title("테스트 프로젝트")
-                .content("테스트 프로젝트 내용")
-                .members(new HashSet<>())
-                .build();
-        testProject.setAuthor(testMember);
-        testProject.getMembers().add(testMember);
-        testProject = projectRepository.save(testProject);
+        ProjectCreateRequest projectCreateRequest = new ProjectCreateRequest();
+        projectCreateRequest.setTitle("테스트 프로젝트");
+        projectCreateRequest.setContent("테스트 프로젝트 내용");
+        Long projectId = projectService.createProject(projectCreateRequest, testMember.getId());
+        testProject = projectRepository.findById(projectId).orElseThrow();
 
         // 테스트용 업무 생성
         testTask = Task.builder()
