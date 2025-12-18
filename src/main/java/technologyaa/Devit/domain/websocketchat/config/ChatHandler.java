@@ -101,13 +101,26 @@ public class ChatHandler extends TextWebSocketHandler {
                 throw new IllegalArgumentException("메시지 내용이 비어있습니다.");
             }
 
-            // 채팅방 ID가 있는 경우 채팅방 조회 (클라이언트는 roomId 필드를 통해 전송)
-            @SuppressWarnings("unchecked")
-            Map<String, Object> messageMap = objectMapper.readValue(payload, Map.class);
-            if (messageMap.containsKey("roomId") && messageMap.get("roomId") != null) {
-                Long roomId = Long.valueOf(messageMap.get("roomId").toString());
-                ChatRoom room = chatRoomRepository.findById(roomId).orElse(null);
-                chatMessage.setRoom(room);
+            // 메시지 저장 로직:
+            // 1. roomId가 있으면 채팅방 메시지로 저장 (receiver 무시)
+            // 2. roomId가 없고 receiver가 있으면 1:1 메시지로 저장
+            // 3. 둘 다 있으면 채팅방 메시지 우선
+            if (chatMessage.getRoomId() != null) {
+                // 채팅방 메시지: roomId를 통해 채팅방 조회
+                ChatRoom room = chatRoomRepository.findById(chatMessage.getRoomId()).orElse(null);
+                if (room != null) {
+                    chatMessage.setRoom(room);
+                    chatMessage.setReceiver(null); // 채팅방 메시지이므로 receiver는 null 처리
+                    log.debug("채팅방 메시지로 처리. roomId: {}", chatMessage.getRoomId());
+                } else {
+                    log.warn("채팅방을 찾을 수 없습니다. roomId: {}", chatMessage.getRoomId());
+                }
+            } else if (chatMessage.getReceiver() != null && !chatMessage.getReceiver().trim().isEmpty()) {
+                // 1:1 메시지: receiver 사용
+                log.debug("1:1 메시지로 처리. receiver: {}", chatMessage.getReceiver());
+            } else {
+                // 둘 다 없으면 브로드캐스트
+                log.debug("브로드캐스트 메시지로 처리");
             }
 
             // 데이터베이스에 저장
@@ -134,24 +147,29 @@ public class ChatHandler extends TextWebSocketHandler {
     
     /**
      * 메시지를 적절한 수신자들에게 전송합니다.
-     * - receiver가 있으면 특정 사용자에게만 전송
-     * - room이 있으면 해당 채팅방의 모든 멤버에게 전송
-     * - 둘 다 없으면 브로드캐스트
+     * - room이 있으면 채팅방 메시지로 전송 (우선순위 1)
+     * - receiver가 있으면 1:1 메시지로 전송 (우선순위 2)
+     * - 둘 다 없으면 브로드캐스트 (우선순위 3)
      */
     private void sendMessage(ChatMessage message, WebSocketSession senderSession) {
         try {
+            // JSON 직렬화 전에 roomId 설정 (room 객체가 있으면 roomId 필드에 설정)
+            if (message.getRoom() != null && message.getRoomId() == null) {
+                message.setRoomId(message.getRoom().getId());
+            }
+            
             String messagePayload = objectMapper.writeValueAsString(message);
             TextMessage textMessage = new TextMessage(messagePayload);
             
-            if (message.getReceiver() != null && !message.getReceiver().trim().isEmpty()) {
-                // 1:1 메시지 전송
+            if (message.getRoom() != null) {
+                // 채팅방 메시지 전송 (우선순위 1)
+                sendToRoom(message.getRoom(), textMessage, message.getSender());
+            } else if (message.getReceiver() != null && !message.getReceiver().trim().isEmpty()) {
+                // 1:1 메시지 전송 (우선순위 2)
                 sendToUser(message.getReceiver(), textMessage);
                 sendToUser(message.getSender(), textMessage); // 발신자에게도 전송
-            } else if (message.getRoom() != null) {
-                // 채팅방 메시지 전송
-                sendToRoom(message.getRoom(), textMessage, message.getSender());
             } else {
-                // 브로드캐스트
+                // 브로드캐스트 (우선순위 3)
                 broadcastMessage(textMessage);
             }
         } catch (Exception e) {
