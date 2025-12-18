@@ -74,9 +74,9 @@ public class ProjectService {
             Project project = projectRepository.findById(id)
                     .orElseThrow(() -> new ProjectException(ProjectErrorCode.PROJECT_NOT_FOUND));
             return new ProjectResponse(project);
-        }
+    }
 
-        // update
+    // update
         @Transactional
         public String updateProject(Long projectId, ProjectUpdateRequest request, Long memberId) {
             Project project = projectRepository.findById(projectId)
@@ -84,12 +84,12 @@ public class ProjectService {
 
             checkProjectAuthor(project, memberId);
 
-            project.setTitle(request.getTitle());
-            project.setContent(request.getContent());
+        project.setTitle(request.getTitle());
+        project.setContent(request.getContent());
             project.setIsCompleted(request.getIsCompleted());
 
             return "프로젝트가 수정되었습니다.";
-        }
+    }
 
     // delete
     @Transactional

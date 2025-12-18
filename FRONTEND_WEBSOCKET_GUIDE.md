@@ -325,3 +325,4 @@ websocket.send(JSON.stringify(message));
 - `console.log`를 사용하여 수신한 메시지를 확인하세요.
 
 
+
