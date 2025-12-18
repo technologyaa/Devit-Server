@@ -4,6 +4,7 @@ import technologyaa.Devit.domain.websocketchat.dto.ChatMessage;
 import technologyaa.Devit.domain.websocketchat.entity.ChatRoom;
 import technologyaa.Devit.domain.websocketchat.repository.ChatMessageRepository;
 import technologyaa.Devit.domain.websocketchat.repository.ChatRoomRepository;
+import technologyaa.Devit.domain.auth.jwt.entity.Member;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -152,11 +153,11 @@ public class ChatHandler extends TextWebSocketHandler {
     
     /**
      * 메시지를 적절한 수신자들에게 전송합니다.
-     * - room이 있으면 채팅방 메시지로 전송 (우선순위 1)
+     * - roomId가 있으면 채팅방 메시지로 전송 (우선순위 1)
      * - receiver가 있으면 1:1 메시지로 전송 (우선순위 2)
      * - 둘 다 없으면 브로드캐스트 (우선순위 3)
      */
-    private void sendMessage(ChatMessage message, WebSocketSession senderSession) {
+    private void sendMessage(ChatMessage message, WebSocketSession senderSession) { // senderSession은 향후 확장을 위해 유지
         try {
             // JSON 직렬화 전에 roomId 설정 (room 객체가 있으면 roomId 필드에 설정)
             if (message.getRoom() != null && message.getRoomId() == null) {
@@ -165,17 +166,22 @@ public class ChatHandler extends TextWebSocketHandler {
             
             String messagePayload = objectMapper.writeValueAsString(message);
             TextMessage textMessage = new TextMessage(messagePayload);
+            log.info("메시지 전송 시작. roomId: {}, receiver: {}, sender: {}", 
+                    message.getRoomId(), message.getReceiver(), message.getSender());
             
-            if (message.getRoom() != null) {
+            if (message.getRoomId() != null) {
                 // 채팅방 메시지 전송 (우선순위 1)
-                sendToRoom(message.getRoom(), textMessage, message.getSender());
+                sendToRoom(message.getRoomId(), textMessage, message.getSender());
             } else if (message.getReceiver() != null && !message.getReceiver().trim().isEmpty()) {
                 // 1:1 메시지 전송 (우선순위 2)
                 sendToUser(message.getReceiver(), textMessage);
                 sendToUser(message.getSender(), textMessage); // 발신자에게도 전송
+                log.info("1:1 메시지 전송 완료. receiver: {}, sender: {}", 
+                        message.getReceiver(), message.getSender());
             } else {
                 // 브로드캐스트 (우선순위 3)
                 broadcastMessage(textMessage);
+                log.info("브로드캐스트 메시지 전송 완료. 현재 세션 수: {}", sessions.size());
             }
         } catch (Exception e) {
             log.error("메시지 전송 중 오류: {}", e.getMessage(), e);
@@ -186,36 +192,93 @@ public class ChatHandler extends TextWebSocketHandler {
      * 특정 사용자에게 메시지를 전송합니다.
      */
     private void sendToUser(String username, TextMessage message) {
+        if (username == null || username.trim().isEmpty()) {
+            log.warn("sendToUser 호출 시 username이 null이거나 비어있음");
+            return;
+        }
+        
         Set<String> sessionIds = userSessionMap.get(username);
-        if (sessionIds != null) {
-            sessionIds.forEach(sessionId -> {
-                sessions.stream()
-                    .filter(s -> s.getId().equals(sessionId) && s.isOpen())
-                    .forEach(session -> {
-                        try {
-                            session.sendMessage(message);
-                        } catch (IOException e) {
-                            log.error("메시지 전송 오류 (세션 {}): {}", sessionId, e.getMessage());
-                        }
-                    });
-            });
+        if (sessionIds == null || sessionIds.isEmpty()) {
+            log.warn("사용자 '{}'에 대한 세션을 찾을 수 없음. 현재 연결된 사용자: {}", 
+                    username, userSessionMap.keySet());
+            return;
+        }
+        
+        log.info("사용자 '{}'에게 메시지 전송 시도. 세션 ID 개수: {}", username, sessionIds.size());
+        
+        int[] counts = {0, 0}; // [성공, 실패]
+        
+        for (String sessionId : sessionIds) {
+            boolean sessionFound = false;
+            
+            for (WebSocketSession session : sessions) {
+                if (session.getId().equals(sessionId) && session.isOpen()) {
+                    sessionFound = true;
+                    try {
+                        session.sendMessage(message);
+                        counts[0]++;
+                        log.debug("메시지 전송 성공. 사용자: {}, 세션: {}", username, sessionId);
+                    } catch (IOException e) {
+                        counts[1]++;
+                        log.error("메시지 전송 오류 (사용자: {}, 세션 {}): {}", username, sessionId, e.getMessage(), e);
+                    }
+                    break; // 해당 세션을 찾았으므로 다음 sessionId로 이동
+                }
+            }
+            
+            if (!sessionFound) {
+                counts[1]++;
+                log.warn("세션을 찾을 수 없거나 닫혀있음. 사용자: {}, 세션: {}", username, sessionId);
+            }
+        }
+        
+        if (counts[0] > 0) {
+            log.info("사용자 '{}'에게 메시지 전송 완료. 성공: {}, 실패: {}", username, counts[0], counts[1]);
+        } else {
+            log.warn("사용자 '{}'에게 메시지 전송 실패. 모든 세션이 닫혀있거나 찾을 수 없음", username);
         }
     }
     
     /**
      * 채팅방의 모든 멤버에게 메시지를 전송합니다.
+     * Lazy Loading 문제를 피하기 위해 roomId로 다시 조회합니다.
      */
-    private void sendToRoom(ChatRoom room, TextMessage message, String sender) {
-        if (room.getMembers() != null) {
-            room.getMembers().forEach(member -> {
-                String username = member.getUsername();
-                if (!username.equals(sender)) { // 발신자는 제외
+    private void sendToRoom(Long roomId, TextMessage message, String sender) {
+        try {
+            // members를 포함해서 조회 (Lazy Loading 방지)
+            ChatRoom room = chatRoomRepository.findByIdWithMembers(roomId)
+                    .orElseThrow(() -> new IllegalArgumentException("채팅방을 찾을 수 없습니다. roomId: " + roomId));
+            
+            log.info("채팅방 메시지 전송 시작. roomId: {}, roomName: {}, sender: {}, 멤버 수: {}", 
+                    roomId, room.getName(), sender, room.getMembers() != null ? room.getMembers().size() : 0);
+            
+            int sentCount = 0;
+            if (room.getMembers() != null) {
+                for (Member member : room.getMembers()) {
+                    String username = member.getUsername();
+                    // 발신자에게도 전송 (자신이 보낸 메시지도 자신에게 전달)
                     sendToUser(username, message);
+                    sentCount++;
+                    log.debug("메시지 전송 대상: {}", username);
                 }
-            });
+            } else {
+                // members가 없어도 발신자에게는 전송
+                sendToUser(sender, message);
+                sentCount++;
+            }
+            
+            log.info("채팅방 메시지 전송 완료. roomId: {}, 전송된 사용자 수: {}", roomId, sentCount);
+        } catch (Exception e) {
+            log.error("채팅방 메시지 전송 중 오류. roomId: {}, sender: {}, 오류: {}", 
+                    roomId, sender, e.getMessage(), e);
+            // 오류가 발생해도 발신자에게는 전송 시도
+            try {
+                sendToUser(sender, message);
+                log.info("오류 발생 후 발신자에게 메시지 전송 완료: {}", sender);
+            } catch (Exception ex) {
+                log.error("발신자에게 메시지 전송 실패: {}", ex.getMessage());
+            }
         }
-        // 발신자에게도 전송
-        sendToUser(sender, message);
     }
 
     // 3. 웹소켓 연결이 닫힌 후 호출됩니다.
