@@ -295,14 +295,34 @@ public class ChatHandler extends TextWebSocketHandler {
                     userSessionMap.remove(username);
                 }
             }
-            log.info("세션 연결 종료됨: {}. 사용자: {}. 현재 세션 수: {}, 종료 상태: {}", 
-                    sessionId, username, sessions.size(), status.getCode());
+            log.info("세션 연결 종료됨: {}. 사용자: {}. 현재 세션 수: {}, 종료 상태: {}, 이유: {}", 
+                    sessionId, username, sessions.size(), status.getCode(), status.getReason());
         } else {
-            log.info("세션 연결 종료됨: {}. 현재 세션 수: {}, 종료 상태: {}", 
-                    sessionId, sessions.size(), status.getCode());
+            log.info("세션 연결 종료됨: {}. 현재 세션 수: {}, 종료 상태: {}, 이유: {}", 
+                    sessionId, sessions.size(), status.getCode(), status.getReason());
         }
         
         sessions.remove(session);
+    }
+
+    // 4. 웹소켓 전송 오류 발생 시 호출됩니다.
+    @Override
+    public void handleTransportError(WebSocketSession session, Throwable exception) throws Exception {
+        String sessionId = session.getId();
+        String username = sessionUserMap.get(sessionId);
+        
+        log.error("WebSocket 전송 오류 발생. sessionId: {}, username: {}, 오류: {}", 
+                sessionId, username, exception.getMessage(), exception);
+        
+        // 오류 발생 시 세션 정리
+        try {
+            session.close();
+        } catch (Exception e) {
+            log.error("오류 발생 세션 종료 실패: {}", e.getMessage());
+        }
+        
+        // 세션 맵에서 제거
+        afterConnectionClosed(session, CloseStatus.SERVER_ERROR);
     }
 
     /**
