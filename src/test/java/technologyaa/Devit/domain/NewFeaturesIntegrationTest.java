@@ -25,6 +25,7 @@ import technologyaa.Devit.domain.websocketchat.entity.ChatRoom;
 import technologyaa.Devit.domain.websocketchat.repository.ChatMessageRepository;
 import technologyaa.Devit.domain.websocketchat.repository.ChatRoomRepository;
 
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
@@ -88,7 +89,7 @@ public class NewFeaturesIntegrationTest {
     private Task testTask;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws IOException {
         // 테스트용 유저 생성
         testMember = Member.builder()
                 .username("testuser")
@@ -105,7 +106,7 @@ public class NewFeaturesIntegrationTest {
         ProjectCreateRequest projectCreateRequest = new ProjectCreateRequest();
         projectCreateRequest.setTitle("테스트 프로젝트");
         projectCreateRequest.setContent("테스트 프로젝트 내용");
-        Long projectId = projectService.createProject(projectCreateRequest, testMember.getId());
+        Long projectId = projectService.createProject(projectCreateRequest, testMember.getId(), null);
         testProject = projectRepository.findById(projectId).orElseThrow();
 
         // 테스트용 업무 생성

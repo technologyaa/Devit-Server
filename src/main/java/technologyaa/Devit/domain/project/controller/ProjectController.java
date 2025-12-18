@@ -35,10 +35,11 @@ public class ProjectController {
     private final SecurityUtil securityUtil;
 
     // 생성
-    @Operation(summary = "프로젝트 생성", description = "새로운 프로젝트를 생성합니다.")
-    @PostMapping
+    @Operation(summary = "프로젝트 생성", description = "새로운 프로젝트를 생성합니다. 이미지를 포함할 수 있습니다.")
+    @PostMapping(consumes = {"multipart/form-data"})
     public ResponseEntity<?> createProject(
-            @RequestBody ProjectCreateRequest request
+            @RequestPart("request") ProjectCreateRequest request,
+            @RequestPart(value = "image", required = false) MultipartFile image
     ) {
         try {
             // 1. 요청 검증
@@ -56,11 +57,22 @@ public class ProjectController {
             Member currentMember = securityUtil.getMember();
             Long authorId = currentMember.getId();
 
-            // 3. 프로젝트 생성
-            Long projectId = projectService.createProject(request, authorId);
-            log.info("프로젝트 생성 성공: projectId={}, authorId={}", projectId, authorId);
+            // 3. 프로젝트 생성 (이미지 포함)
+            Long projectId = projectService.createProject(request, authorId, image);
+            log.info("프로젝트 생성 성공: projectId={}, authorId={}, hasImage={}", 
+                    projectId, authorId, image != null && !image.isEmpty());
 
             return ResponseEntity.status(HttpStatus.CREATED).body(projectId);
+
+        } catch (IOException e) {
+            // 파일 업로드 오류
+            log.error("프로젝트 생성 중 이미지 업로드 오류 발생", e);
+            ErrorResponse errorResponse = ErrorResponse.of(
+                    "FILE_UPLOAD_ERROR",
+                    "이미지 업로드 중 오류가 발생했습니다: " + e.getMessage()
+            );
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new APIResponse<>(HttpStatus.INTERNAL_SERVER_ERROR.value(), errorResponse));
 
         } catch (DataAccessException e) {
             // 데이터베이스 오류

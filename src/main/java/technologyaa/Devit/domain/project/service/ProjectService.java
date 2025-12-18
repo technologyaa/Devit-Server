@@ -53,16 +53,28 @@ public class ProjectService {
 
     // create
     @Transactional
-    public Long createProject(ProjectCreateRequest request, Long authorId) {
+    public Long createProject(ProjectCreateRequest request, Long authorId, MultipartFile image) throws IOException {
         Member author = memberRepository.findById(authorId)
                 .orElseThrow(() -> new AuthorException(AuthorErrorCode.AUTHOR_NOT_FOUND));
 
-        Project project = Project.builder()
+        Project.ProjectBuilder projectBuilder = Project.builder()
                 .title(request.getTitle())
                 .content(request.getContent())
-                .author(author)
-                .build();
+                .author(author);
 
+        // 이미지가 있으면 업로드하고 profile에 저장
+        if (image != null && !image.isEmpty()) {
+            try {
+                String imagePath = fileStorageService.storeProjectFile(image);
+                projectBuilder.profile(imagePath);
+                log.info("프로젝트 이미지 업로드 성공: {}", imagePath);
+            } catch (IOException e) {
+                log.error("프로젝트 이미지 업로드 실패", e);
+                throw new RuntimeException("이미지 업로드 실패: " + e.getMessage(), e);
+            }
+        }
+
+        Project project = projectBuilder.build();
         project.getMembers().add(author);
 
         Project savedProject = projectRepository.save(project);

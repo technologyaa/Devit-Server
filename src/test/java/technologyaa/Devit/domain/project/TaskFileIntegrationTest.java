@@ -108,7 +108,7 @@ public class TaskFileIntegrationTest {
         ProjectCreateRequest projectRequest = new ProjectCreateRequest();
         projectRequest.setTitle("테스트 프로젝트");
         projectRequest.setContent("테스트 내용");
-        Long projectId = projectService.createProject(projectRequest, testMember.getId());
+        Long projectId = projectService.createProject(projectRequest, testMember.getId(), null);
         Project project = projectRepository.findById(projectId).orElseThrow();
         assertNotNull(project);
         assertNotNull(project.getProjectId());
@@ -158,7 +158,7 @@ public class TaskFileIntegrationTest {
         ProjectCreateRequest projectRequest = new ProjectCreateRequest();
         projectRequest.setTitle("다운로드 테스트 프로젝트");
         projectRequest.setContent("테스트 내용");
-        Long projectId = projectService.createProject(projectRequest, testMember.getId());
+        Long projectId = projectService.createProject(projectRequest, testMember.getId(), null);
         Project project = projectRepository.findById(projectId).orElseThrow();
 
         // 업무 생성
@@ -195,7 +195,7 @@ public class TaskFileIntegrationTest {
         ProjectCreateRequest projectRequest = new ProjectCreateRequest();
         projectRequest.setTitle("목록 테스트 프로젝트");
         projectRequest.setContent("테스트 내용");
-        Long projectId = projectService.createProject(projectRequest, testMember.getId());
+        Long projectId = projectService.createProject(projectRequest, testMember.getId(), null);
         Project project = projectRepository.findById(projectId).orElseThrow();
 
         // 업무 생성
@@ -237,7 +237,7 @@ public class TaskFileIntegrationTest {
         ProjectCreateRequest projectRequest = new ProjectCreateRequest();
         projectRequest.setTitle("삭제 테스트 프로젝트");
         projectRequest.setContent("테스트 내용");
-        Long projectId = projectService.createProject(projectRequest, testMember.getId());
+        Long projectId = projectService.createProject(projectRequest, testMember.getId(), null);
         Project project = projectRepository.findById(projectId).orElseThrow();
 
         // 업무 생성
@@ -277,7 +277,7 @@ public class TaskFileIntegrationTest {
         ProjectCreateRequest projectRequest = new ProjectCreateRequest();
         projectRequest.setTitle("CRUD 테스트 프로젝트");
         projectRequest.setContent("테스트 내용");
-        Long projectId = projectService.createProject(projectRequest, testMember.getId());
+        Long projectId = projectService.createProject(projectRequest, testMember.getId(), null);
         Project project = projectRepository.findById(projectId).orElseThrow();
 
         // 업무 생성
