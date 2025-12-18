@@ -39,13 +39,12 @@ public class ReviewService {
 
     public APIResponse<String> sendReview(SendReviewRequest request, Long projectId, Long memberId) {
         Member sender = securityUtil.getMember();
-        List<Member> members = new java.util.ArrayList<>(projectService.getProjectMembers(projectId));
-        Member receiver = memberRepository.findById(memberId)
-                .orElseThrow(() -> new AuthException(AuthErrorCode.MEMBER_NOT_FOUND));
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new ProjectException(ProjectErrorCode.PROJECT_NOT_FOUND));
+        Member receiver = memberRepository.findById(memberId)
+                .orElseThrow(() -> new AuthException(AuthErrorCode.MEMBER_NOT_FOUND));
 
-        boolean isMemberInProject = members.stream()
+        boolean isMemberInProject = project.getMembers().stream()
                 .anyMatch(member -> member.getId().equals(memberId));
 
         if (!isMemberInProject) {

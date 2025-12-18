@@ -4,8 +4,11 @@ import jakarta.mail.search.SearchTerm;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import technologyaa.Devit.domain.auth.jwt.dto.response.MemberResponse;
 import technologyaa.Devit.domain.auth.jwt.entity.Member;
 import technologyaa.Devit.domain.auth.jwt.repository.MemberRepository;
+import technologyaa.Devit.domain.developer.entity.Developer;
+import technologyaa.Devit.domain.developer.repository.DeveloperRepository;
 import technologyaa.Devit.domain.project.dto.ProjectCreateRequest;
 import technologyaa.Devit.domain.project.dto.ProjectResponse;
 import technologyaa.Devit.domain.project.dto.ProjectUpdateRequest;
@@ -35,6 +38,7 @@ public class ProjectService {
     private final MemberRepository memberRepository;
     private final FileStorageService fileStorageService;
     private final TaskRepository taskRepository;
+    private final DeveloperRepository developerRepository;
 
     private void checkProjectAuthor(Project project, Long memberId) {
         if (!project.getAuthor().getId().equals(memberId)) {
@@ -121,11 +125,18 @@ public class ProjectService {
     }
 
 
-    public Set<Member> getProjectMembers(Long projectId) {
+    @Transactional(readOnly = true)
+    public List<MemberResponse> getProjectMembers(Long projectId) {
         Project project = projectRepository.findById(projectId)
-                .orElseThrow(() -> new RuntimeException("해당 프로젝트를 찾을 수 없습니다."));
+                .orElseThrow(() -> new ProjectException(ProjectErrorCode.PROJECT_NOT_FOUND));
 
-        return project.getMembers();
+        return project.getMembers().stream()
+                .map(member -> {
+                    Developer developer = developerRepository.findById(member.getId())
+                            .orElse(null);
+                    return MemberResponse.from(member, developer != null ? developer.getMajor() : null);
+                })
+                .collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)

@@ -14,7 +14,7 @@ import technologyaa.Devit.domain.project.dto.ProjectUpdateRequest;
 import technologyaa.Devit.domain.project.dto.ProjectWithTasksResponse;
 import technologyaa.Devit.domain.common.APIResponse;
 import org.springframework.web.multipart.MultipartFile;
-import technologyaa.Devit.domain.common.APIResponse;
+import technologyaa.Devit.domain.auth.jwt.dto.response.MemberResponse;
 import technologyaa.Devit.domain.project.service.ProjectService;
 import technologyaa.Devit.global.util.SecurityUtil;
 
@@ -85,8 +85,8 @@ public class ProjectController {
 
     @Operation(summary = "프로젝트 참여 멤버 조회", description = "특정 프로젝트에 참여 중인 모든 멤버를 조회합니다.")
     @GetMapping("/{projectId}/members")
-    public ResponseEntity<Set<Member>> getProjectMembers(@PathVariable Long projectId) {
-        Set<Member> members = projectService.getProjectMembers(projectId);
+    public ResponseEntity<List<MemberResponse>> getProjectMembers(@PathVariable Long projectId) {
+        List<MemberResponse> members = projectService.getProjectMembers(projectId);
         return ResponseEntity.ok(members);
     }
 
