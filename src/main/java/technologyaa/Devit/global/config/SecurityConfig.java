@@ -49,12 +49,13 @@ public class SecurityConfig {
                                 .requestMatchers("/login", "/", "/static/**", "/swagger-ui/**", "/v3/api-docs/**", "/login.html", "/sizgnup.html", "/chat.html", "/project.html", "/index.html", "/auth/**", "/*.html", "/ws/**","/email/**").permitAll()
                                 .requestMatchers("/oauth2/**").permitAll() // OAuth 로그인 허용
                                 .requestMatchers("/api/users/me").permitAll() // 로그인 상태 확인용
-                                .requestMatchers("/projects/**").permitAll() // 프로젝트 API 접근 허용
+                                .requestMatchers("/projects/my-projects").authenticated() // 내 프로젝트 조회는 인증 필요
+                                .requestMatchers("/projects/profile/**").authenticated() // 프로젝트 프로필 관련은 인증 필요
+                                .requestMatchers("/projects/**").permitAll() // 나머지 프로젝트 API는 접근 허용
                                 .requestMatchers("/uploads/**").permitAll() // 업로드된 파일 접근 허용
                                 .requestMatchers("/chat/**").authenticated() // 채팅 API는 인증 필요
                                 .requestMatchers("/api/profile/**").authenticated()
                                 .requestMatchers("/auth/profile/**").authenticated()
-                                .requestMatchers("/projects/profile/**").authenticated()
                                 .requestMatchers("/developers/**").permitAll()
 //                                .anyRequest().permitAll()
                 )

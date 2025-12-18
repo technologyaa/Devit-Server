@@ -17,11 +17,22 @@ public class SecurityUtil {
     public Member getMember() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 
-        if (auth == null || !auth.isAuthenticated() || auth.getPrincipal().equals("anonymousUser")) {
+        if (auth == null || !auth.isAuthenticated()) {
             throw new AuthException(AuthErrorCode.UNAUTHORIZED);
         }
 
-        return memberRepository.findByUsername(auth.getName())
+        // anonymousUser 체크를 안전하게 처리
+        Object principal = auth.getPrincipal();
+        if (principal == null || "anonymousUser".equals(principal.toString())) {
+            throw new AuthException(AuthErrorCode.UNAUTHORIZED);
+        }
+
+        String username = auth.getName();
+        if (username == null || username.trim().isEmpty()) {
+            throw new AuthException(AuthErrorCode.UNAUTHORIZED);
+        }
+
+        return memberRepository.findByUsername(username)
                 .orElseThrow(() -> new AuthException(AuthErrorCode.MEMBER_NOT_FOUND));
     }
 }
