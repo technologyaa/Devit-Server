@@ -174,6 +174,17 @@ public class NewFeaturesIntegrationTest {
     }
 
     @Test
+    void testGetAllProjects() throws Exception {
+        // 인증 없이 전체 프로젝트 조회 (permitAll)
+        mockMvc.perform(get("/projects")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isArray());
+        
+        System.out.println("✅ 전체 프로젝트 조회 테스트 성공");
+    }
+
+    @Test
     @WithMockUser(username = "testuser")
     void testGetChattingUsers() throws Exception {
         // 다른 유저 생성 및 채팅 메시지 추가
