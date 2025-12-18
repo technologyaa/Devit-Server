@@ -50,7 +50,7 @@ public class ChatMessageService {
 
             Pageable pageable = PageRequest.of(page, size, Sort.by("timestamp").descending());
             Page<ChatMessage> messagePage = chatMessageRepository.findByRoom_IdOrderByTimestampDesc(roomId, pageable);
-            List<ChatMessage> messages = messagePage.getContent();
+            List<ChatMessage> messages = new java.util.ArrayList<>(messagePage.getContent());
             log.info("메시지 조회 완료 - 총 메시지 수: {}", messages.size());
             
             // 최신순으로 정렬되어 있으므로 오래된 순으로 역순 정렬
