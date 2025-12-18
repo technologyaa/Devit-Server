@@ -37,9 +37,17 @@ public class ChatMessage {
     @JsonIgnore
     private technologyaa.Devit.domain.websocketchat.entity.ChatRoom room; // 채팅방
 
-    // JSON 직렬화를 위한 roomId getter
+    // 클라이언트에서 받는 roomId (DB에 저장하지 않음, JSON 역직렬화용)
+    @Transient
     @JsonProperty("roomId")
+    private Long roomId;
+
+    // JSON 직렬화를 위한 roomId getter (roomId 필드가 있으면 우선, 없으면 room에서 가져옴)
+    // Lombok의 @Getter가 생성하는 getRoomId()를 override
     public Long getRoomId() {
+        if (roomId != null) {
+            return roomId;
+        }
         return room != null ? room.getId() : null;
     }
 
