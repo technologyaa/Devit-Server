@@ -50,6 +50,14 @@ public class ProjectController {
         return ResponseEntity.ok(projects);
     }
 
+    // 추천 프로젝트 조회
+    @Operation(summary = "추천 프로젝트 조회", description = "완료되지 않은 최신 프로젝트를 조회합니다.")
+    @GetMapping("/recommended")
+    public ResponseEntity<List<ProjectResponse>> getRecommendedProjects() {
+        List<ProjectResponse> projects = projectService.getRecommendedProjects();
+        return ResponseEntity.ok(projects);
+    }
+
     // 조회 (하나)
     @Operation(summary = "프로젝트 단일 조회", description = "특정 프로젝트를 조회합니다.")
     @GetMapping("/{id}")

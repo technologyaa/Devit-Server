@@ -73,27 +73,27 @@ public class ProjectService {
     }
 
     // read one
-    @Transactional(readOnly = true)
-    public ProjectResponse findProjectById(Long id) {
-        Project project = projectRepository.findByIdWithAuthor(id)
-                .orElseThrow(() -> new ProjectException(ProjectErrorCode.PROJECT_NOT_FOUND));
-        return ProjectResponse.from(project);
-    }
+        @Transactional(readOnly = true)
+        public ProjectResponse findProjectById(Long id) {
+            Project project = projectRepository.findByIdWithAuthor(id)
+                    .orElseThrow(() -> new ProjectException(ProjectErrorCode.PROJECT_NOT_FOUND));
+            return ProjectResponse.from(project);
+        }
 
-    // update
-    @Transactional
-    public String updateProject(Long projectId, ProjectUpdateRequest request, Long memberId) {
-        Project project = projectRepository.findById(projectId)
-                .orElseThrow(() -> new ProjectException(ProjectErrorCode.PROJECT_NOT_FOUND));
+        // update
+        @Transactional
+        public String updateProject(Long projectId, ProjectUpdateRequest request, Long memberId) {
+            Project project = projectRepository.findById(projectId)
+                    .orElseThrow(() -> new ProjectException(ProjectErrorCode.PROJECT_NOT_FOUND));
 
-        checkProjectAuthor(project, memberId);
+            checkProjectAuthor(project, memberId);
 
-        project.setTitle(request.getTitle());
-        project.setContent(request.getContent());
-        project.setIsCompleted(request.getIsCompleted());
+            project.setTitle(request.getTitle());
+            project.setContent(request.getContent());
+            project.setIsCompleted(request.getIsCompleted());
 
-        return "프로젝트가 수정되었습니다.";
-    }
+            return "프로젝트가 수정되었습니다.";
+        }
 
     // delete
     @Transactional
@@ -147,6 +147,13 @@ public class ProjectService {
                     List<Task> tasks = taskRepository.findByProject_ProjectId(project.getProjectId());
                     return ProjectWithTasksResponse.from(project, tasks);
                 })
+                .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public List<ProjectResponse> getRecommendedProjects() {
+        return projectRepository.findRecommendedProjects().stream()
+                .map(ProjectResponse::from)
                 .collect(Collectors.toList());
     }
 }
