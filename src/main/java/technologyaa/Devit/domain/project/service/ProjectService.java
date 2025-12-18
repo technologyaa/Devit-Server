@@ -1,6 +1,5 @@
 package technologyaa.Devit.domain.project.service;
 
-import jakarta.mail.search.SearchTerm;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,7 +26,6 @@ import technologyaa.Devit.domain.project.repository.TaskRepository;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -77,7 +75,15 @@ public class ProjectService {
     public ProjectResponse findProjectById(Long id) {
         Project project = projectRepository.findByIdWithAuthor(id)
                 .orElseThrow(() -> new ProjectException(ProjectErrorCode.PROJECT_NOT_FOUND));
-        return ProjectResponse.from(project);
+        
+        // author의 major 가져오기
+        String major = null;
+        Developer developer = developerRepository.findById(project.getAuthor().getId()).orElse(null);
+        if (developer != null && developer.getMajor() != null) {
+            major = developer.getMajor().toString();
+        }
+        
+        return ProjectResponse.from(project, major);
     }
 
     // update

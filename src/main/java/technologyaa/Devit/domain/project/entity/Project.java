@@ -3,6 +3,7 @@ package technologyaa.Devit.domain.project.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 import technologyaa.Devit.domain.auth.jwt.entity.Member;
 
 import java.time.LocalDateTime;
@@ -43,6 +44,11 @@ public class Project {
     @Column(nullable = false, updatable = false)
     @Builder.Default
     private LocalDateTime createAt = LocalDateTime.now();
+
+    @UpdateTimestamp
+    @Column(nullable = false)
+    @Builder.Default
+    private LocalDateTime updatedAt = LocalDateTime.now();
 
     @Builder.Default
     @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
