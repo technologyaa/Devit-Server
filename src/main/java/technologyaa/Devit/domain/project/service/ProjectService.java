@@ -67,17 +67,17 @@ public class ProjectService {
     // read all
     @Transactional(readOnly = true)
     public List<ProjectResponse> findAllProjects() {
-        return projectRepository.findAll().stream()
-                .map(ProjectResponse::new)
+        return projectRepository.findAllWithAuthor().stream()
+                .map(ProjectResponse::from)
                 .collect(Collectors.toList());
     }
 
     // read one
         @Transactional(readOnly = true)
         public ProjectResponse findProjectById(Long id) {
-            Project project = projectRepository.findById(id)
+            Project project = projectRepository.findByIdWithAuthor(id)
                     .orElseThrow(() -> new ProjectException(ProjectErrorCode.PROJECT_NOT_FOUND));
-            return new ProjectResponse(project);
+            return ProjectResponse.from(project);
         }
 
         // update
