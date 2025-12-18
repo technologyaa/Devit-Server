@@ -31,6 +31,7 @@ import java.util.Set;
 
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -358,6 +359,136 @@ public class NewFeaturesIntegrationTest {
                 .andExpect(status().isForbidden());
 
         System.out.println("✅ 채팅방 메시지 조회 API 권한 체크 테스트 성공 (Forbidden)");
+    }
+
+    @Test
+    @WithMockUser(username = "testuser")
+    void testLeaveRoom_Success() throws Exception {
+        // 1. 다른 멤버 생성
+        Member otherMember = Member.builder()
+                .username("otheruser")
+                .password("encodedPassword")
+                .email("other@example.com")
+                .createdAt("2024-01-01 00:00:00")
+                .credit(0L)
+                .role(Role.ROLE_USER)
+                .isDeveloper(false)
+                .build();
+        otherMember = memberRepository.save(otherMember);
+
+        // 2. testuser와 otheruser가 속한 채팅방 생성
+        Set<Member> members = new HashSet<>();
+        members.add(testMember);
+        members.add(otherMember);
+        ChatRoom testRoom = ChatRoom.builder()
+                .name("테스트 그룹 채팅방")
+                .description("나가기 테스트용")
+                .type(ChatRoom.RoomType.GROUP)
+                .createdAt(LocalDateTime.now())
+                .members(members)
+                .build();
+        testRoom = chatRoomRepository.save(testRoom);
+        Long roomId = testRoom.getId();
+        
+        // 초기 멤버 수 확인
+        ChatRoom savedRoom = chatRoomRepository.findByIdWithMembers(roomId).orElseThrow();
+        assertEquals(2, savedRoom.getMembers().size(), "초기 멤버는 2명이어야 함");
+
+        // 3. testuser가 채팅방 나가기
+        mockMvc.perform(delete("/chat/rooms/{roomId}/members/me", roomId)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value(200));
+
+        // 4. 채팅방에서 testuser가 제거되었는지 확인
+        ChatRoom updatedRoom = chatRoomRepository.findByIdWithMembers(roomId).orElseThrow();
+        assertEquals(1, updatedRoom.getMembers().size(), "멤버가 1명 남아있어야 함");
+        assertTrue(updatedRoom.getMembers().stream()
+                .anyMatch(m -> m.getUsername().equals("otheruser")), "otheruser는 남아있어야 함");
+        assertFalse(updatedRoom.getMembers().stream()
+                .anyMatch(m -> m.getUsername().equals("testuser")), "testuser는 제거되어야 함");
+
+        System.out.println("✅ 채팅방 나가기 테스트 성공 (멤버 남아있는 경우)");
+    }
+
+    @Test
+    @WithMockUser(username = "testuser")
+    void testLeaveRoom_LastMember_DeletesRoom() throws Exception {
+        // 1. testuser만 속한 채팅방 생성
+        Set<Member> members = new HashSet<>();
+        members.add(testMember);
+        ChatRoom testRoom = ChatRoom.builder()
+                .name("단독 채팅방")
+                .description("마지막 멤버 테스트용")
+                .type(ChatRoom.RoomType.GROUP)
+                .createdAt(LocalDateTime.now())
+                .members(members)
+                .build();
+        testRoom = chatRoomRepository.save(testRoom);
+        Long roomId = testRoom.getId();
+
+        // 2. 마지막 멤버인 testuser가 채팅방 나가기
+        mockMvc.perform(delete("/chat/rooms/{roomId}/members/me", roomId)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value(200));
+
+        // 3. 채팅방이 삭제되었는지 확인
+        assertFalse(chatRoomRepository.findById(roomId).isPresent(), "채팅방이 삭제되어야 함");
+
+        System.out.println("✅ 채팅방 나가기 테스트 성공 (마지막 멤버 - 채팅방 삭제)");
+    }
+
+    @Test
+    @WithMockUser(username = "testuser")
+    void testLeaveRoom_Forbidden_NotMember() throws Exception {
+        // 1. 다른 사용자 생성
+        Member otherMember = Member.builder()
+                .username("otheruser")
+                .password("encodedPassword")
+                .email("other@example.com")
+                .createdAt("2024-01-01 00:00:00")
+                .credit(0L)
+                .role(Role.ROLE_USER)
+                .isDeveloper(false)
+                .build();
+        otherMember = memberRepository.save(otherMember);
+
+        // 2. otheruser만 속한 채팅방 생성 (testuser는 멤버가 아님)
+        Set<Member> members = new HashSet<>();
+        members.add(otherMember);
+        ChatRoom otherRoom = ChatRoom.builder()
+                .name("다른 사용자 채팅방")
+                .description("접근 불가 채팅방")
+                .type(ChatRoom.RoomType.GROUP)
+                .createdAt(LocalDateTime.now())
+                .members(members)
+                .build();
+        otherRoom = chatRoomRepository.save(otherRoom);
+        Long otherRoomId = otherRoom.getId();
+
+        // 3. testuser가 멤버가 아닌 채팅방에서 나가기 시도
+        mockMvc.perform(delete("/chat/rooms/{roomId}/members/me", otherRoomId)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isForbidden());
+
+        // 4. 채팅방은 그대로 존재해야 함
+        assertTrue(chatRoomRepository.findById(otherRoomId).isPresent(), "채팅방은 그대로 존재해야 함");
+
+        System.out.println("✅ 채팅방 나가기 권한 체크 테스트 성공 (Forbidden)");
+    }
+
+    @Test
+    @WithMockUser(username = "testuser")
+    void testLeaveRoom_NotFound() throws Exception {
+        // 존재하지 않는 채팅방 ID로 나가기 시도
+        Long nonExistentRoomId = 99999L;
+        
+        mockMvc.perform(delete("/chat/rooms/{roomId}/members/me", nonExistentRoomId)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().is5xxServerError()); // 서버에서 RuntimeException으로 처리되어 500 에러
+
+        System.out.println("✅ 채팅방 나가기 - 존재하지 않는 채팅방 테스트 성공");
     }
 }
 

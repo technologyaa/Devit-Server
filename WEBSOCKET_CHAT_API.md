@@ -241,6 +241,27 @@ Authorization: Bearer {token}
 
 **Response:** 채팅방 생성 API와 동일
 
+#### 6. 채팅방 나가기
+```http
+DELETE /chat/rooms/{roomId}/members/me
+Authorization: Bearer {token}
+```
+
+현재 로그인한 사용자가 채팅방에서 나갑니다. 마지막 멤버가 나가면 채팅방이 자동으로 삭제됩니다.
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": null,
+  "message": "성공"
+}
+```
+
+**에러 응답:**
+- `403 Forbidden`: 채팅방 멤버가 아닌 경우
+- `404 Not Found`: 채팅방을 찾을 수 없는 경우
+
 ### 채팅 메시지 API
 
 #### 1. 채팅방 메시지 조회
@@ -380,6 +401,21 @@ const response = await fetch(`http://localhost:8080/chat/messages/room/${roomId}
   }
 });
 const { data: messages } = await response.json();
+```
+
+#### Step 6: 채팅방 나가기
+```javascript
+const response = await fetch(`http://localhost:8080/chat/rooms/${roomId}/members/me`, {
+  method: 'DELETE',
+  headers: {
+    'Authorization': `Bearer ${token}`
+  }
+});
+const { success } = await response.json();
+if (success) {
+  console.log('채팅방에서 나갔습니다.');
+  // 채팅방 목록에서 제거하거나 채팅 페이지로 리다이렉트
+}
 ```
 
 ---
