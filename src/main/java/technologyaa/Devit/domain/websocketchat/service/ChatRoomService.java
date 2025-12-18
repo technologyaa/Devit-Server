@@ -301,33 +301,46 @@ public class ChatRoomService {
             log.info("채팅방 나가기 요청. roomId: {}", roomId);
             
             Member currentMember = securityUtil.getMember();
-            log.debug("현재 사용자: {}", currentMember.getUsername());
+            log.debug("현재 사용자: {} (ID: {})", currentMember.getUsername(), currentMember.getId());
             
             ChatRoom room = chatRoomRepository.findByIdWithMembers(roomId)
                     .orElseThrow(() -> {
                         log.error("채팅방을 찾을 수 없습니다. roomId: {}", roomId);
-                        return new RuntimeException("채팅방을 찾을 수 없습니다.");
+                        return new IllegalArgumentException("채팅방을 찾을 수 없습니다.");
                     });
 
+            log.debug("채팅방 조회 완료. roomId: {}, 멤버 수: {}", roomId, room.getMembers() != null ? room.getMembers().size() : 0);
+
             // 현재 사용자가 채팅방에 속해있는지 확인
-            boolean isMember = room.getMembers().stream()
-                    .anyMatch(member -> member.getId().equals(currentMember.getId()));
+            Member memberToRemove = null;
+            if (room.getMembers() != null) {
+                for (Member member : room.getMembers()) {
+                    if (member.getId().equals(currentMember.getId())) {
+                        memberToRemove = member;
+                        break;
+                    }
+                }
+            }
             
-            if (!isMember) {
+            if (memberToRemove == null) {
                 log.error("채팅방 멤버가 아닙니다. roomId: {}, memberId: {}", roomId, currentMember.getId());
                 throw new AuthException(AuthErrorCode.FORBIDDEN);
             }
 
-            // 멤버에서 제거
-            room.getMembers().removeIf(member -> member.getId().equals(currentMember.getId()));
+            log.debug("멤버 제거 시작. roomId: {}, memberId: {}", roomId, memberToRemove.getId());
+            
+            // 멤버에서 제거 (명시적으로 remove 사용)
+            boolean removed = room.getMembers().remove(memberToRemove);
+            log.debug("멤버 제거 결과: {}, 남은 멤버 수: {}", removed, room.getMembers().size());
             
             // 마지막 멤버가 나가면 채팅방 삭제
             if (room.getMembers().isEmpty()) {
                 log.info("마지막 멤버가 나갔으므로 채팅방 삭제. roomId: {}", roomId);
                 chatRoomRepository.delete(room);
+                chatRoomRepository.flush(); // 즉시 DB에 반영
             } else {
                 // 아직 멤버가 남아있으면 저장
-                chatRoomRepository.save(room);
+                chatRoomRepository.saveAndFlush(room); // 즉시 DB에 반영
                 log.info("채팅방에서 나가기 완료. roomId: {}, 남은 멤버 수: {}", 
                         roomId, room.getMembers().size());
             }
@@ -335,14 +348,14 @@ public class ChatRoomService {
             return APIResponse.ok(null);
             
         } catch (AuthException e) {
-            log.error("채팅방 나가기 실패: {}", e.getMessage());
+            log.error("채팅방 나가기 실패 (AuthException): {}", e.getMessage());
             throw e;
-        } catch (RuntimeException e) {
-            log.error("채팅방 나가기 실패: {}", e.getMessage());
+        } catch (IllegalArgumentException e) {
+            log.error("채팅방 나가기 실패 (IllegalArgumentException): {}", e.getMessage());
             throw e;
         } catch (Exception e) {
-            log.error("채팅방 나가기 중 예상치 못한 오류 발생", e);
-            throw new RuntimeException("채팅방 나가기 중 오류가 발생했습니다.", e);
+            log.error("채팅방 나가기 중 예상치 못한 오류 발생. roomId: {}", roomId, e);
+            throw new RuntimeException("채팅방 나가기 중 오류가 발생했습니다: " + e.getMessage(), e);
         }
     }
 
