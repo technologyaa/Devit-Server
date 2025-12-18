@@ -2,6 +2,7 @@ package technologyaa.Devit.domain.auth.jwt.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import technologyaa.Devit.domain.project.entity.Project;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -35,13 +36,8 @@ public class Member {
     @Column(length = 500)
     private String profile;
 
-    @ManyToMany
-    @JoinTable(
-            name = "project_members",
-            joinColumns = @JoinColumn(name = "project_id"),
-            inverseJoinColumns = @JoinColumn(name = "member_id")
-    )
+    @ManyToMany(mappedBy = "members")
     @Builder.Default
-    private Set<Member> members = new HashSet<>();
+    private Set<Project> projects = new HashSet<>();
 }
 

@@ -9,6 +9,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import technologyaa.Devit.domain.auth.jwt.dto.request.*;
+import technologyaa.Devit.domain.auth.jwt.dto.response.DeveloperResponse;
 import technologyaa.Devit.domain.auth.jwt.dto.response.MemberResponse;
 import technologyaa.Devit.domain.auth.jwt.dto.response.SignInResponse;
 import technologyaa.Devit.domain.auth.jwt.entity.Member;
@@ -132,12 +133,12 @@ public class MemberService {
         return APIResponse.ok(memberResponses);
     }
 
-    public APIResponse<List<MemberResponse>> getDevelopers() {
+    public APIResponse<List<DeveloperResponse>> getDevelopers() {
         List<Member> developers = memberRepository.findByRole(technologyaa.Devit.domain.auth.jwt.entity.Role.ROLE_DEVELOPER);
-        List<MemberResponse> developerResponses = developers.stream()
+        List<DeveloperResponse> developerResponses = developers.stream()
                 .map(member -> {
                     Developer developer = developerRepository.findById(member.getId()).orElse(null);
-                    return MemberResponse.from(member, developer != null ? developer.getMajor() : null);
+                    return DeveloperResponse.from(member, developer);
                 })
                 .collect(java.util.stream.Collectors.toList());
         return APIResponse.ok(developerResponses);
