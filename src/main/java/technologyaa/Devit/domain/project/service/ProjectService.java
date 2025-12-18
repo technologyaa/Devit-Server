@@ -77,14 +77,29 @@ public class ProjectService {
             List<ProjectResponse> result = new ArrayList<>();
             for (Project project : projects) {
                 try {
-                    // 각 프로젝트의 author가 제대로 로드되었는지 확인
-                    if (project.getAuthor() != null) {
-                        // author의 username을 미리 호출하여 lazy loading 트리거
-                        project.getAuthor().getUsername();
+                    if (project == null) {
+                        log.warn("null 프로젝트 발견, 건너뜀");
+                        continue;
                     }
+                    
+                    // 각 프로젝트의 author가 제대로 로드되었는지 확인
+                    if (project.getAuthor() == null) {
+                        log.warn("프로젝트 author가 null입니다 - projectId: {}, 건너뜀", project.getProjectId());
+                        continue;
+                    }
+                    
+                    // author의 username을 미리 호출하여 lazy loading 트리거 (JOIN FETCH로 이미 로드되어 있어야 함)
+                    try {
+                        project.getAuthor().getUsername();
+                    } catch (Exception e) {
+                        log.error("author 접근 중 오류 발생 - projectId: {}", project.getProjectId(), e);
+                        continue;
+                    }
+                    
                     result.add(ProjectResponse.from(project));
                 } catch (Exception e) {
-                    log.error("프로젝트 변환 중 오류 발생 - projectId: {}", project.getProjectId(), e);
+                    log.error("프로젝트 변환 중 오류 발생 - projectId: {}", 
+                            project != null ? project.getProjectId() : "unknown", e);
                     // 개별 프로젝트 변환 실패 시 해당 프로젝트만 건너뛰고 계속 진행
                     continue;
                 }
