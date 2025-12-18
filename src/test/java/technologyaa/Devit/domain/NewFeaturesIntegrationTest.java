@@ -157,6 +157,20 @@ public class NewFeaturesIntegrationTest {
                 .andExpect(jsonPath("$.data[0].title").value("테스트 프로젝트"))
                 .andExpect(jsonPath("$.data[0].tasks").isArray())
                 .andExpect(jsonPath("$.data[0].tasks[0].title").value("테스트 업무"));
+        
+        System.out.println("✅ 내 프로젝트 조회 테스트 성공 (인증된 사용자)");
+    }
+
+    @Test
+    void testGetMyProjects_Unauthorized() throws Exception {
+        // 인증 없이 요청 시 401 에러 반환 확인
+        mockMvc.perform(get("/projects/my-projects")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.data.code").value("UNAUTHORIZED"))
+                .andExpect(jsonPath("$.data.message").value("인증이 필요합니다."));
+        
+        System.out.println("✅ 내 프로젝트 조회 테스트 성공 (인증 없음 - 401 반환)");
     }
 
     @Test

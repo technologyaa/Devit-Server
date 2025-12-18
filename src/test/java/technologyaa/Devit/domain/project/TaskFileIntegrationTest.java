@@ -10,6 +10,7 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.transaction.annotation.Transactional;
 import technologyaa.Devit.domain.project.dto.ProjectCreateRequest;
 import technologyaa.Devit.domain.project.dto.TaskRequest;
+import technologyaa.Devit.domain.project.dto.TaskResponse;
 import technologyaa.Devit.domain.project.entity.Project;
 import technologyaa.Devit.domain.project.entity.Task;
 import technologyaa.Devit.domain.project.entity.TaskFile;
@@ -117,11 +118,14 @@ public class TaskFileIntegrationTest {
         taskRequest.setTitle("테스트 업무");
         taskRequest.setDescription("테스트 업무 설명");
         taskRequest.setStatus(TaskStatus.TODO);
-        Task task = taskService.create(project.getProjectId(), taskRequest);
-        assertNotNull(task);
-        assertNotNull(task.getTaskId());
-        assertEquals("테스트 업무", task.getTitle());
-        assertEquals(TaskStatus.TODO, task.getStatus());
+        TaskResponse taskResponse = taskService.create(project.getProjectId(), taskRequest);
+        assertNotNull(taskResponse);
+        assertNotNull(taskResponse.getTaskId());
+        assertEquals("테스트 업무", taskResponse.getTitle());
+        assertEquals("TODO", taskResponse.getStatus());
+
+        // Task 엔티티 가져오기 (TaskFileService에서 필요)
+        Task task = taskRepository.findById(taskResponse.getTaskId()).orElseThrow();
 
         // 3. 파일 업로드
         MockMultipartFile file = new MockMultipartFile(
@@ -161,7 +165,8 @@ public class TaskFileIntegrationTest {
         TaskRequest taskRequest = new TaskRequest();
         taskRequest.setTitle("다운로드 테스트 업무");
         taskRequest.setDescription("테스트 업무 설명");
-        Task task = taskService.create(project.getProjectId(), taskRequest);
+        TaskResponse taskResponse = taskService.create(project.getProjectId(), taskRequest);
+        Task task = taskRepository.findById(taskResponse.getTaskId()).orElseThrow();
 
         // 파일 업로드
         String fileContent = "다운로드 테스트 파일 내용";
@@ -197,7 +202,8 @@ public class TaskFileIntegrationTest {
         TaskRequest taskRequest = new TaskRequest();
         taskRequest.setTitle("목록 테스트 업무");
         taskRequest.setDescription("테스트 업무 설명");
-        Task task = taskService.create(project.getProjectId(), taskRequest);
+        TaskResponse taskResponse = taskService.create(project.getProjectId(), taskRequest);
+        Task task = taskRepository.findById(taskResponse.getTaskId()).orElseThrow();
 
         // 파일 2개 업로드
         MockMultipartFile file1 = new MockMultipartFile(
@@ -238,7 +244,8 @@ public class TaskFileIntegrationTest {
         TaskRequest taskRequest = new TaskRequest();
         taskRequest.setTitle("삭제 테스트 업무");
         taskRequest.setDescription("테스트 업무 설명");
-        Task task = taskService.create(project.getProjectId(), taskRequest);
+        TaskResponse taskResponse = taskService.create(project.getProjectId(), taskRequest);
+        Task task = taskRepository.findById(taskResponse.getTaskId()).orElseThrow();
 
         // 파일 업로드
         MockMultipartFile file = new MockMultipartFile(
@@ -278,15 +285,16 @@ public class TaskFileIntegrationTest {
         taskRequest.setTitle("CRUD 테스트 업무");
         taskRequest.setDescription("테스트 업무 설명");
         taskRequest.setStatus(TaskStatus.TODO);
-        Task task = taskService.create(project.getProjectId(), taskRequest);
+        TaskResponse taskResponse = taskService.create(project.getProjectId(), taskRequest);
+        Task task = taskRepository.findById(taskResponse.getTaskId()).orElseThrow();
 
         // 업무 조회
-        Task foundTask = taskService.findOne(task.getTaskId());
+        TaskResponse foundTask = taskService.findOne(task.getTaskId());
         assertEquals("CRUD 테스트 업무", foundTask.getTitle());
-        assertEquals(TaskStatus.TODO, foundTask.getStatus());
+        assertEquals("TODO", foundTask.getStatus());
 
         // 프로젝트의 모든 업무 조회
-        List<Task> tasks = taskService.findAllByProjectId(project.getProjectId());
+        List<TaskResponse> tasks = taskService.findAllByProjectId(project.getProjectId());
         assertEquals(1, tasks.size());
 
         // 업무 수정
@@ -294,9 +302,9 @@ public class TaskFileIntegrationTest {
         updateRequest.setTitle("수정된 업무");
         updateRequest.setDescription("수정된 설명");
         updateRequest.setStatus(TaskStatus.IN_PROGRESS);
-        Task updatedTask = taskService.update(task.getTaskId(), updateRequest);
+        TaskResponse updatedTask = taskService.update(task.getTaskId(), updateRequest);
         assertEquals("수정된 업무", updatedTask.getTitle());
-        assertEquals(TaskStatus.IN_PROGRESS, updatedTask.getStatus());
+        assertEquals("IN_PROGRESS", updatedTask.getStatus());
 
         // 업무 삭제
         taskService.delete(task.getTaskId());
