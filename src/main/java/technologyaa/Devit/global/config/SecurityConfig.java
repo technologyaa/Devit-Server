@@ -57,7 +57,7 @@ public class SecurityConfig {
                                 .requestMatchers("/api/profile/**").authenticated()
                                 .requestMatchers("/auth/profile/**").authenticated()
                                 .requestMatchers("/developers/**").permitAll()
-                                .anyRequest().permitAll()
+//                                .anyRequest().permitAll()
                 )
                 .formLogin(AbstractHttpConfigurer::disable)
                 // OAuth 로그인 활성화
